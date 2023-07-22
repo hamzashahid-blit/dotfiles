@@ -368,7 +368,7 @@ bar:
                  - string: { text: " | " }
      - network:
          name: enp8s0
-         poll-interval: 1
+         poll-interval: 500
          content:
            map:
              conditions:

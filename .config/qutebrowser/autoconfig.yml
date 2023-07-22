@@ -8,6 +8,6 @@ config_version: 2
 settings:
   url.searchengines:
     global:
-      DEFAULT: https://mojeek.com/search?q={}
+      DEFAULT: https://searx.be/search?q={}
   url.start_pages:
-    global: https://mojeek.com
+    global: https://searx.be

@@ -47,39 +47,38 @@
   #+begin_src emacs-lisp
 	;; TODO: Which-key gets covered up with minibuffer if font size is 13 or above
 
-	;; (defun my-frame-tweaks (&optional frame)
-	;;   "My personal frame tweaks."
-	;;   (interactive)
-	;;   (unless frame
-	;; 	(setq frame (selected-frame)))
-	;;   (when frame
-	;; 	(with-selected-frame frame
-	;; 	(when (display-graphic-p)
-	;;   (set-face-attribute 'default nil :font "Mononoki" :height 120)
-	;;   (let ((faces '(mode-line
-	;; 		  mode-line-buffer-id
-	;; 		  mode-line-emphasis
-	;; 		  mode-line-highlight
-	;; 		  mode-line-inactive)))
-	;; 	  (mapc
-	;; 	  (lambda (face) (set-face-attribute face nil
-	;; 						:font "Mononoki-12")) faces))))))
-
-	;; Default font size
-	;(set-face-attribute 'default nil :font "Mononoki" :height 125) ;; :height 118
-
-	;(my-frame-tweaks)
-	;(add-hook 'after-make-frame-functions #'my-frame-tweaks t)
-
-	(add-hook 'server-after-make-frame-hook
-			  (lambda ()
-				(interactive)
-				(set-frame-parameter (selected-frame) 'alpha-background 0.9)))
-
 	(add-to-list 'default-frame-alist '(font . "Mononoki-13"))
 	(set-face-attribute 'default t :font "Mononoki-13")
-	;; (add-to-list 'default-frame-alist '(font . "JetBrains Mono"))
-	;; (set-face-attribute 'default t :font "JetBrains Mono")
+
+	(set-frame-parameter (selected-frame) 'alpha-background 70)
+	(add-to-list 'default-frame-alist '(alpha-background . 70))
+
+	;;; Makes frame white for some reason... 
+	;;(set-frame-parameter (selected-frame) 'alpha '(<active> . <inactive>))
+	;;(set-frame-parameter (selected-frame) 'alpha <both>)
+	;; (set-frame-parameter (selected-frame) 'alpha '(70 . 50))
+	;; (add-to-list 'default-frame-alist '(alpha . (70 . 50)))
+
+	;; (defun toggle-transparency ()
+	;;   (interactive)
+	;;   (let ((alpha (frame-parameter nil 'alpha-background)))
+	;; 	(set-frame-parameter
+	;; 	 nil 'alpha
+	;; 	 (if (eql (cond ((numberp alpha) alpha)
+	;; 					((numberp (cdr alpha)) (cdr alpha))
+	;; 					;; Also handle undocumented (<active> <inactive>) form.
+	;; 					((numberp (cadr alpha)) (cadr alpha)))
+	;; 			  100)
+	;; 		 '(85 . 50) '(100 . 100)))))
+
+	;; ;; Set transparency of emacs
+	;; (defun transparency (value)
+	;;   "Sets the transparency of the frame window. 0=transparent/100=opaque"
+	;;   (interactive "nTransparency Value 0 - 100 opaque:")
+	;;   (set-frame-parameter (selected-frame) 'alpha value))
+
+	;; (global-set-key (kbd "C-c t") 'toggle-transparency)
+	;; (global-set-key (kbd "C-c T") 'transparency)
 
 	;;; Default to utf-8 encoding
 	(set-default-coding-systems 'utf-8)
@@ -90,58 +89,6 @@
 	(set-selection-coding-system 'utf-8)
 	(prefer-coding-system 'utf-8)
 	(setq default-process-coding-system '(utf-8-unix . utf-8-unix))
-
-	;; (let ((faces '(mode-line
-	;; 			  mode-line-buffer-id
-	;; 			  mode-line-emphasis
-	;; 			  mode-line-highlight
-	;; 			  mode-line-inactive)))
-	;; 	(mapc
-	;; 	 (lambda (face) (set-face-attribute face nil :font "Monospace-10"))
-	;; 	 faces))
-
-	;;; Default Zoom
-	;; (require 'face-remap)
-
-	;; (defvar global-text-scale-mode-map
-	;;   (let ((map (make-sparse-keymap)))
-	;; 	(define-key map [remap text-scale-adjust] #'global-text-scale-adjust)
-	;; 	map))
-
-	;; (define-globalized-minor-mode
-	;;   global-text-scale-mode
-	;;   text-scale-mode
-	;;   (lambda () (text-scale-mode 1)))
-
-	;; (defun global-text-scale-adjust (scale)
-	;;   "Set the text scale to SCALE in all buffers."
-	;;   (interactive (let* ((ev last-command-event)
-	;; 					  (echo-keystrokes nil)
-	;; 					  (base (event-basic-type ev)))
-	;; 				 (list (+ (pcase base
-	;; 							((or ?+ ?=) (1+ text-scale-mode-amount))
-	;; 							((or ?- ?_) (1- text-scale-mode-amount))
-	;; 							(_ 0))))))
-	;;   (text-scale-set 1)
-	;;   (kill-local-variable 'text-scale-mode-amount)
-	;;   (setq-default text-scale-mode-amount scale)
-	;;   (global-text-scale-mode 1)
-	;;   (set-transient-map
-	;;    (let ((map (make-sparse-keymap)))
-	;; 	 (dolist (mods '(() (control)))
-	;; 	   (dolist (key '(?- ?_ ?+ ?= ?0))
-	;; 		 (define-key map (vector (append mods (list key)))
-	;; 		   #'global-text-scale-adjust)))
-	;; 	 map))
-	;;   (message "Use +,-,0 for further adjustment"))
-
-	;; (add-hook 'buffer-list-update-hook
-	;;   (lambda () (mapc (lambda (buffer)
-	;; 					 (let ((name (buffer-name buffer)))
-	;; 					   (unless (or (active-minibuffer-window)
-	;; 								   (string= name "*Echo Area 0*"))
-	;; 						 (with-current-buffer buffer (text-scale-set 2)))))
-	;; 				   (buffer-list))))
   #+end_src
 
 * UI Tweaks
@@ -2444,6 +2391,7 @@
 	   "fcwx" '((lambda () (interactive)(find-file "~/.xmonad/xmonad.hs")) :which-key "XMonad Config")
 	   "fcws" '((lambda () (interactive)(find-file "~/.stumpwm.d/init.lisp")) :which-key "StumpWM Config")
 	   "fcwr" '((lambda () (interactive)(find-file "~/.config/river/init")) :which-key "RiverWM Config")
+	   "fcww" '((lambda () (interactive)(find-file "~/.config/wayfire.ini")) :which-key "Wayfire Config")
 
 	   ;;; Code
 	   "c" '(:ignore t :which-key "Code")

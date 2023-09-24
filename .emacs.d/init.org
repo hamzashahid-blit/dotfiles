@@ -20,8 +20,7 @@
 	 initial-scratch-message ";; Welcome to Groovemacs!\n\n")
 
 	;; Icons in doom modeline are turned off by design when run from daemon
-	(setq doom-modeline-icon t)
-		  ;doom-modeline-height 27)
+	(setq doom-modeline-icon t) ; (doom-modeline-height 27)
 
 	(tool-bar-mode -1)              ; Remove toolbar on top
 	(menu-bar-mode -1)              ; Remove menubar below toolbar
@@ -102,7 +101,8 @@
 					term-mode-hook
 					shell-mode-hook
 					eshell-mode-hook
-					vterm-mode-hook))
+					vterm-mode-hook
+					eat-mode))
 	  (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
 	;; Too slow
@@ -201,111 +201,38 @@
 
 * Basic Packages
   #+begin_src emacs-lisp
-	(use-package hl-line
-	  :config
-	  (global-hl-line-mode 1))
-	; (set-face-attribute 'hl-line nil :background "gray21"))
+		;; Keep ~/.emacs.d clean
+		(use-package no-littering)
 
-	(use-package restart-emacs
-	  :defer t)
+		(use-package hl-line
+		  :config
+		  (global-hl-line-mode 1))
+			; (set-face-attribute 'hl-line nil :background "gray21"))
 
-	;; Allows you to "try" a package without installing it
-	(use-package try
-	  :defer t)
+		;; Allows you to "try" a package without installing it
+		(use-package try
+		  :defer t)
 
-	;; Power of Emacs' powerful undo system more intuitivily. Inspired by VIM
-	(use-package undo-tree
-	  :config
-	  (global-undo-tree-mode))
+		;; Power of Emacs' powerful undo system more intuitivily. Inspired by VIM
+		(use-package undo-tree
+		  :config
+		  ;; Prevent undo tree files from polluting your git repo
+		  (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
+		  (global-undo-tree-mode))
 
-	(use-package command-log-mode        ; See which commands are run and the output of them in a side window
-	  :defer t
-	  :diminish                          ; Removes command-log showing up in modeline
-	  :config
-	  (global-command-log-mode))
+		(use-package command-log-mode        ; See which commands are run and the output of them in a side window
+		  :defer t
+		  :diminish                          ; Removes command-log showing up in modeline
+		  :config
+		  (global-command-log-mode))
 
-	(use-package pcre2el
-	  :config
-	  (pcre-mode 0))
+		;; Jump around very conveniently
+		(use-package avy)
 
-	;; Jump around very conveniently
-	(use-package avy)
-
-	;; Search with regexp and others
-	(use-package anzu
-	  :defer t)
-
-	(use-package ranger
-	  :defer t)
-
-	(use-package no-littering)
+		;; Search with regexp and others
+		(use-package anzu
+		  :defer t)
  #+end_src
-
-* Indenting
-  #+begin_src emacs-lisp
-	;; ;; Create a variable for our preferred tab width
-	;; (setq custom-tab-width 4)
-	;; (setq custom-tab-width2 2)
-
-	;; ;; Two callable functions for enabling/disabling tabs in Emacs
-	;; (defun hamza/disable-tabs ()
-	;;   (interactive)
-	;;   (setq indent-tabs-mode nil))
-
-	;; (defun hamza/enable-tabs  ()
-	;;   (interactive)
-	;;   (local-set-key (kbd "TAB") 'tab-to-tab-stop)
-	;;   (setq indent-tabs-mode t)
-	;;   (setq tab-width custom-tab-width))
-
-	;; ;; Hooks to Enable Tabs
-	;; (add-hook 'prog-mode-hook 'hamza/enable-tabs)
-	;; ;; Hooks to Disable Tabs
-	;; (add-hook 'lisp-mode-hook 'hamza/disable-tabs)
-	;; (add-hook 'emacs-lisp-mode-hook 'hamza/disable-tabs)
-
-	;; ;; Language-Specific Tweaks
-	;; (setq-default c-basic-offset custom-tab-width)
-	;; (setq-default python-indent-offset custom-tab-width) ;; Python
-	;; (setq-default js-indent-level custom-tab-width)      ;; Javascript
-	;; (setq-default lisp-indent-offset custom-tab-width2)  ;; Lisp
-
-	;; ;; Indenting Behaviour
-	;; (put 'add-function 'lisp-indent-function 2)
-	;; (put 'advice-add 'lisp-indent-function 2)
-	;; (put 'evil-define-key* 'lisp-indent-function 'defun)
-	;; (put 'plist-put 'lisp-indent-function 2)
-
-	;; ;; Making electric-indent behave sanely
-	;; (setq-default electric-indent-inhibit t)
-
-	;; ;; Make the backspace properly erase the tab instead of
-	;; ;; removing 1 space at a time.
-	;; (setq backward-delete-char-untabify-method 'hungry)
-
-	;; ;; (OPTIONAL) Shift width for evil-mode users
-	;; ;; For the vim-like motions of ">>" and "<<".
-	;; (setq-default evil-shift-width custom-tab-width)
-
-	;; ;; draws visual tabs on screen lines or bitmap (customize-variable (highlight-indent-guides-method))
-	;; (use-package highlight-indent-guides
-	;;   :hook (prog-mode . highlight-indent-guides-mode))
-
-	;; ;; Turn on whitespace-mode (color extra spaces red) only for listed modes
-	;; (dolist (mode '(text-mode-hook
-	;; 				fundamental-mode-hook
-	;; 				org-mode-hook))
-	;;   (add-hook mode (lambda () (whitespace-mode t))))
-
-	;; (setq whitespace-style '(face trailing))
-
-	;; ;; for tabs AND spaces at the same time
-	;; (use-package smart-tabs-mode
-	;;   :config
-	;;   (setq evil-indent-convert-tabs nil))
-
-	;; ;;(setq-default indent-tabs-mode nil)
-  #+end_src
 
 * Theme
   #+begin_src emacs-lisp
@@ -321,20 +248,92 @@
 * Centaur Tabs
   #+begin_src emacs-lisp
 	(use-package centaur-tabs
-	  :bind (:map evil-normal-state-map
-		  ("g t" . centaur-tabs-forward)
-		  ("g T" . centaur-tabs-backward))
 	  :config
-	  (setq centaur-tabs-style 'box
-		centaur-tabs-set-bar 'over        ;; Set a bar 'over 'under 'left ... of the tab denoting which tab we are on
-		x-underline-at-descent-line t      ;; If not using spacemacs this will display bar correctly
-		centaur-tabs-set-icons t           ;; show icons in tabs
-		centaur-gray-out-icons nil         ;; if set to 'buffer gray out icons of any buffer tab like *scrath* or dired
-		centaur-tabs-height 24             ;; set tab height
-		centaur-tabs-set-modified-marker t ;; we want to change the "x" icon on the tab when buffer is unsaved
-		centaur-tabs-modified-marker "●")  ;; set the marker for above change
-      :after
-	  (centaur-tabs-mode t))
+	  (centaur-tabs-headline-match)
+	  (setq centaur-tabs-style "bar"
+			centaur-tabs-height 32
+			centaur-tabs-set-icons t
+			centaur-tabs-gray-out-icons 'buffer
+			centaur-tabs-set-bar 'left ;; 'under
+			x-underline-at-descent-line t
+			centaur-tabs-set-modified-marker t
+			centaur-tabs-adjust-buffer-order t
+			centaur-tabs-adjust-buffer-order 'left
+			centaur-tabs-left-edge-margin nil)
+	  ;; set the marker for above change
+	  (centaur-tabs-mode t)
+	  (centaur-tabs-local-mode t)
+	  :bind (:map evil-normal-state-map
+				  ("g t" . centaur-tabs-forward)
+				  ("g T" . centaur-tabs-backward)
+				  ("g C-t" . centaur-tabs-ace-jump)
+				  ("M-<tab>" . centaur-tabs-forward)
+				  ("M-<iso-lefttab>" . centaur-tabs-backward)
+				  ("M-C-<tab>" . centaur-tabs-forward-group)
+				  ("M-C-<iso-lefttab>" . centaur-tabs-backward-group)))
+
+	(defun centaur-tabs-buffer-groups ()
+	  "`centaur-tabs-buffer-groups' control buffers' group rules.
+
+	Group centaur-tabs with mode if buffer is derived from `eshell-mode' `emacs-lisp-mode' `dired-mode' `org-mode' `magit-mode'.
+	All buffer name start with * will group to \"Emacs\".
+	Other buffer group by `centaur-tabs-get-group-name' with project name."
+	  (list
+	   (cond
+		((or (string-equal "*" (substring (buffer-name) 0 1))
+			 (memq major-mode '(magit-process-mode
+								magit-status-mode
+								magit-diff-mode
+								magit-log-mode
+								magit-file-mode
+								magit-blob-mode
+								magit-blame-mode)))
+		 "Emacs")
+		((derived-mode-p 'prog-mode)
+		 "Editing")
+		((derived-mode-p 'dired-mode)
+		 "Dired")
+		((memq major-mode '(helpful-mode
+							help-mode))
+		 "Help")
+		((memq major-mode '(org-mode
+							org-agenda-clockreport-mode
+							org-src-mode
+							org-agenda-mode
+							org-beamer-mode
+							org-indent-mode
+							org-bullets-mode
+							org-cdlatex-mode
+							org-agenda-log-mode
+							diary-mode))
+		 "OrgMode")
+		(t (centaur-tabs-get-group-name (current-buffer))))))
+
+	(defun centaur-tabs-hide-tab (x)
+	  "Do no to show buffer X in tabs."
+	  (let ((name (format "%s" x)))
+		(or
+		 ;; Current window is not dedicated window.
+		 (window-dedicated-p (selected-window))
+		 ;; Buffer name not match below blacklist.
+		 (string-prefix-p "*epc" name)
+		 (string-prefix-p "*helm" name)
+		 (string-prefix-p "*Helm" name)
+		 (string-prefix-p "*Compile-Log*" name)
+		 (string-prefix-p "*lsp" name)
+		 (string-prefix-p "*company" name)
+		 (string-prefix-p "*Flycheck" name)
+		 (string-prefix-p "*tramp" name)
+		 (string-prefix-p " *Mini" name)
+		 (string-prefix-p "*help" name)
+		 (string-prefix-p "*straight" name)
+		 (string-prefix-p " *temp" name)
+		 (string-prefix-p "*Help" name)
+		 (string-prefix-p "*mybuf" name)
+		 (string-prefix-p "*Messages" name)
+		 ;; Is not magit buffer.
+		 (and (string-prefix-p "magit" name)
+			  (not (file-name-extension name))))))
   #+end_src
 
 * Helm [Disabled]
@@ -480,125 +479,125 @@
 
 * Consult
   #+begin_src emacs-lisp
-	;; Example configuration for Consult
-	(use-package consult
-	  ;; Replace bindings. Lazily loaded due by `use-package'.
-	  :bind (;; C-c bindings (mode-specific-map)
-			 ("C-c h" . consult-history)
-			 ("C-c m" . consult-mode-command)
-			 ("C-c b" . consult-bookmark)
-			 ("C-c k" . consult-kmacro)
-			 ;; C-x bindings (ctl-x-map)
-			 ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
-			 ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
-			 ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
-			 ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
-			 ;; Custom M-# bindings for fast register access
-			 ("M-#" . consult-register-load)
-			 ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
-			 ("C-M-#" . consult-register)
-			 ;; Other custom bindings
-			 ("M-y" . consult-yank-pop)                ;; orig. yank-pop
-			 ("<help> a" . consult-apropos)            ;; orig. apropos-command
-			 ;; M-g bindings (goto-map)
-			 ("M-g e" . consult-compile-error)
-			 ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
-			 ("M-g g" . consult-goto-line)             ;; orig. goto-line
-			 ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
-			 ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
-			 ("M-g m" . consult-mark)
-			 ("M-g k" . consult-global-mark)
-			 ("M-g i" . consult-imenu)
-			 ("M-g I" . consult-imenu-multi)
-			 ;; M-s bindings (search-map)
-			 ("M-s f" . consult-find)
-			 ("M-s F" . consult-locate)
-			 ("M-s g" . consult-grep)
-			 ("M-s G" . consult-git-grep)
-			 ("M-s r" . consult-ripgrep)
-			 ("M-s l" . consult-line)
-			 ("M-s L" . consult-line-multi)
-			 ("M-s m" . consult-multi-occur)
-			 ("M-s k" . consult-keep-lines)
-			 ("M-s u" . consult-focus-lines)
-			 ;; Isearch integration
-			 ("M-s e" . consult-isearch)
-			 :map isearch-mode-map
-			 ("M-e" . consult-isearch)                 ;; orig. isearch-edit-string
-			 ("M-s e" . consult-isearch)               ;; orig. isearch-edit-string
-			 ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
-			 ("M-s L" . consult-line-multi))           ;; needed by consult-line to detect isearch
+	;; ;; Example configuration for Consult
+	;; (use-package consult
+	;;   ;; Replace bindings. Lazily loaded due by `use-package'.
+	;;   :bind (;; C-c bindings (mode-specific-map)
+	;; 		 ("C-c h" . consult-history)
+	;; 		 ("C-c m" . consult-mode-command)
+	;; 		 ("C-c b" . consult-bookmark)
+	;; 		 ("C-c k" . consult-kmacro)
+	;; 		 ;; C-x bindings (ctl-x-map)
+	;; 		 ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
+	;; 		 ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
+	;; 		 ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
+	;; 		 ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+	;; 		 ;; Custom M-# bindings for fast register access
+	;; 		 ("M-#" . consult-register-load)
+	;; 		 ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+	;; 		 ("C-M-#" . consult-register)
+	;; 		 ;; Other custom bindings
+	;; 		 ("M-y" . consult-yank-pop)                ;; orig. yank-pop
+	;; 		 ("<help> a" . consult-apropos)            ;; orig. apropos-command
+	;; 		 ;; M-g bindings (goto-map)
+	;; 		 ("M-g e" . consult-compile-error)
+	;; 		 ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
+	;; 		 ("M-g g" . consult-goto-line)             ;; orig. goto-line
+	;; 		 ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
+	;; 		 ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
+	;; 		 ("M-g m" . consult-mark)
+	;; 		 ("M-g k" . consult-global-mark)
+	;; 		 ("M-g i" . consult-imenu)
+	;; 		 ("M-g I" . consult-imenu-multi)
+	;; 		 ;; M-s bindings (search-map)
+	;; 		 ("M-s f" . consult-find)
+	;; 		 ("M-s F" . consult-locate)
+	;; 		 ("M-s g" . consult-grep)
+	;; 		 ("M-s G" . consult-git-grep)
+	;; 		 ("M-s r" . consult-ripgrep)
+	;; 		 ("M-s l" . consult-line)
+	;; 		 ("M-s L" . consult-line-multi)
+	;; 		 ("M-s m" . consult-multi-occur)
+	;; 		 ("M-s k" . consult-keep-lines)
+	;; 		 ("M-s u" . consult-focus-lines)
+	;; 		 ;; Isearch integration
+	;; 		 ("M-s e" . consult-isearch)
+	;; 		 :map isearch-mode-map
+	;; 		 ("M-e" . consult-isearch)                 ;; orig. isearch-edit-string
+	;; 		 ("M-s e" . consult-isearch)               ;; orig. isearch-edit-string
+	;; 		 ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
+	;; 		 ("M-s L" . consult-line-multi))           ;; needed by consult-line to detect isearch
 
-	  ;; Enable automatic preview at point in the *Completions* buffer.
-	  ;; This is relevant when you use the default completion UI,
-	  ;; and not necessary for Vertico, Selectrum, etc.
-	  :hook (completion-list-mode . consult-preview-at-point-mode)
+	;;   ;; Enable automatic preview at point in the *Completions* buffer.
+	;;   ;; This is relevant when you use the default completion UI,
+	;;   ;; and not necessary for Vertico, Selectrum, etc.
+	;;   :hook (completion-list-mode . consult-preview-at-point-mode)
 
-	  ;; The :init configuration is always executed (Not lazy)
-	  :init
+	;;   ;; The :init configuration is always executed (Not lazy)
+	;;   :init
 
-	  ;; Optionally configure the register formatting. This improves the register
-	  ;; preview for `consult-register', `consult-register-load',
-	  ;; `consult-register-store' and the Emacs built-ins.
-	  (setq register-preview-delay 0
-			register-preview-function #'consult-register-format)
+	;;   ;; Optionally configure the register formatting. This improves the register
+	;;   ;; preview for `consult-register', `consult-register-load',
+	;;   ;; `consult-register-store' and the Emacs built-ins.
+	;;   (setq register-preview-delay 0
+	;; 		register-preview-function #'consult-register-format)
 
-	  ;; Optionally tweak the register preview window.
-	  ;; This adds thin lines, sorting and hides the mode line of the window.
-	  (advice-add #'register-preview :override #'consult-register-window)
+	;;   ;; Optionally tweak the register preview window.
+	;;   ;; This adds thin lines, sorting and hides the mode line of the window.
+	;;   (advice-add #'register-preview :override #'consult-register-window)
 
-	  ;; Optionally replace `completing-read-multiple' with an enhanced version.
-	  (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
+	;;   ;; Optionally replace `completing-read-multiple' with an enhanced version.
+	;;   (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
 
-	  ;; Use Consult to select xref locations with preview
-	  (setq xref-show-xrefs-function #'consult-xref
-			xref-show-definitions-function #'consult-xref)
+	;;   ;; Use Consult to select xref locations with preview
+	;;   (setq xref-show-xrefs-function #'consult-xref
+	;; 		xref-show-definitions-function #'consult-xref)
 
-	  ;; Configure other variables and modes in the :config section,
-	  ;; after lazily loading the package.
-	  :config
+	;;   ;; Configure other variables and modes in the :config section,
+	;;   ;; after lazily loading the package.
+	;;   :config
 
-	  ;; Optionally configure preview. The default value
-	  ;; is 'any, such that any key triggers the preview.
-	  ;; (setq consult-preview-key 'any)
-	  ;; (setq consult-preview-key (kbd "M-."))
-	  ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
-	  ;; For some commands and buffer sources it is useful to configure the
-	  ;; :preview-key on a per-command basis using the `consult-customize' macro.
-	  (consult-customize
-	   consult-theme
-	   :preview-key '(:debounce 0.2 any)
-	   consult-ripgrep consult-git-grep consult-grep
-	   consult-bookmark consult-recent-file consult-xref
-	   consult--source-file consult--source-project-file consult--source-bookmark
-	   :preview-key (kbd "M-."))
+	;;   ;; Optionally configure preview. The default value
+	;;   ;; is 'any, such that any key triggers the preview.
+	;;   ;; (setq consult-preview-key 'any)
+	;;   ;; (setq consult-preview-key (kbd "M-."))
+	;;   ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
+	;;   ;; For some commands and buffer sources it is useful to configure the
+	;;   ;; :preview-key on a per-command basis using the `consult-customize' macro.
+	;;   (consult-customize
+	;;    consult-theme
+	;;    :preview-key '(:debounce 0.2 any)
+	;;    consult-ripgrep consult-git-grep consult-grep
+	;;    consult-bookmark consult-recent-file consult-xref
+	;;    consult--source-file consult--source-project-file consult--source-bookmark
+	;;    :preview-key (kbd "M-."))
 
-	  ;; Optionally configure the narrowing key.
-	  ;; Both < and C-+ work reasonably well.
-	  (setq consult-narrow-key "<") ;; (kbd "C-+")
+	;;   ;; Optionally configure the narrowing key.
+	;;   ;; Both < and C-+ work reasonably well.
+	;;   (setq consult-narrow-key "<") ;; (kbd "C-+")
 
-	  ;; Optionally make narrowing help available in the minibuffer.
-	  ;; You may want to use `embark-prefix-help-command' or which-key instead.
-	  ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+	;;   ;; Optionally make narrowing help available in the minibuffer.
+	;;   ;; You may want to use `embark-prefix-help-command' or which-key instead.
+	;;   ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
-	  ;; Optionally configure a function which returns the project root directory.
-	  ;; There are multiple reasonable alternatives to chose from.
-	  ;;;; 1. project.el (project-roots)
-	  (setq consult-project-root-function
-			(lambda ()
-			  (when-let (project (project-current))
-				(car (project-roots project)))))
-	  ;;;; 2. projectile.el (projectile-project-root)
-	  ;; (autoload 'projectile-project-root "projectile")
-	  ;; (setq consult-project-root-function #'projectile-project-root)
-	  ;;;; 3. vc.el (vc-root-dir)
-	  ;; (setq consult-project-root-function #'vc-root-dir)
-	  ;;;; 4. locate-dominating-file
-	  ;; (setq consult-project-root-function (lambda () (locate-dominating-file "." ".git")))
-	)
+	;;   ;; Optionally configure a function which returns the project root directory.
+	;;   ;; There are multiple reasonable alternatives to chose from.
+	;;   ;;;; 1. project.el (project-roots)
+	;;   (setq consult-project-root-function
+	;; 		(lambda ()
+	;; 		  (when-let (project (project-current))
+	;; 			(car (project-roots project)))))
+	;;   ;;;; 2. projectile.el (projectile-project-root)
+	;;   ;; (autoload 'projectile-project-root "projectile")
+	;;   ;; (setq consult-project-root-function #'projectile-project-root)
+	;;   ;;;; 3. vc.el (vc-root-dir)
+	;;   ;; (setq consult-project-root-function #'vc-root-dir)
+	;;   ;;;; 4. locate-dominating-file
+	;;   ;; (setq consult-project-root-function (lambda () (locate-dominating-file "." ".git")))
+	;; )
 
-	(use-package embark-consult)
-	(use-package wgrep)
+	;; (use-package embark-consult)
+	;; (use-package wgrep)
   #+end_src
 
 * Embark
@@ -874,9 +873,15 @@
 	   :config
 	   (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
 
+	 (use-package dired-preview
+	   :config
+	   (setf dired-preview-delay 0)
+	   (setf dired-preview-max-size 100000000))
+
 	 (use-package treemacs
 	   :config
 	   (treemacs-resize-icons 24))
+
 
 	 ;; (use-package treemacs-icons-dired
 	 ;;   :after treemacs dired
@@ -911,20 +916,20 @@
 
 * Folding
   #+begin_src emacs-lisp
-	(use-package yafolding
-	  :config
-	  (defvar yafolding-mode-map
-	  (let ((map (make-sparse-keymap)))
-		(define-key map (kbd "<C-S-return>") #'yafolding-hide-parent-element)
-		(define-key map (kbd "<C-M-return>") #'yafolding-toggle-all)
-		(define-key map (kbd "<C-return>") #'yafolding-toggle-element)
-		map)))
+	;; (use-package yafolding
+	;;   :config
+	;;   (defvar yafolding-mode-map
+	;;   (let ((map (make-sparse-keymap)))
+	;; 	(define-key map (kbd "<C-S-return>") #'yafolding-hide-parent-element)
+	;; 	(define-key map (kbd "<C-M-return>") #'yafolding-toggle-all)
+	;; 	(define-key map (kbd "<C-return>") #'yafolding-toggle-element)
+	;; 	map)))
 
-	(use-package fold-this
-	  :config
-	  (global-set-key (kbd "C-c C-f") 'fold-this-all)
-	  (global-set-key (kbd "C-c C-F") 'fold-this)
-	  (global-set-key (kbd "C-c M-f") 'fold-this-unfold-all))
+	;; (use-package fold-this
+	;;   :config
+	;;   (global-set-key (kbd "C-c C-f") 'fold-this-all)
+	;;   (global-set-key (kbd "C-c C-F") 'fold-this)
+	;;   (global-set-key (kbd "C-c M-f") 'fold-this-unfold-all))
   #+end_src
 
 * Delimiters
@@ -1275,14 +1280,16 @@
 * Terminal
   #+begin_src emacs-lisp
 	;; For Nix, direnv, .envrc and lorri
-	(use-package direnv
-	  :config
-	  (direnv-mode))
+	;; (use-package direnv
+	;;   :config
+	;;   (direnv-mode))
 
 	(use-package term
 	  :config
 	  (setq explicit-shell-file-name "bash")
 	  (setq term-prompt-regexp "^[^#$%>\n]*[#$%>] *"))
+
+	;(package-vc-install "https://codeberg.org/akib/emacs-eat")
 
 	;; 256 terminal colors yayyyy
 	(use-package eterm-256color
@@ -1321,95 +1328,6 @@
 			(append
 			 (split-string-and-unquote path ":")
 			 exec-path)))
-
-	;;;;;;;;;;;;;;;;;;;;EVIL VTERM;;;;;;;;;;;;;;START;;;;
-
-	;; ;; (use-package vterm-extra
-	;; ;;   :load-path "custom/vterm-extra"
-	;; ;;   :bind (("s-t" . vterm-extra-dispatcher)
-	;; ;; 		  :map vterm-mode-map
-	;; ;; 		  (("C-c C-e" . vterm-extra-edit-command-in-new-buffer))))
-
-	;; (defvar vterm-extra-line-mode-map nil)
-	;; (setq vterm-extra-line-mode-map (make-sparse-keymap))
-
-	;; (define-key vterm-extra-line-mode-map (kbd "<return>")
-	;;   'vterm-extra-read-and-send)
-
-	;; (define-minor-mode vterm-extra-line-mode ;"VTermLine"
-	;;   "Vterm extra line mode."
-	;;   :global nil
-	;;   :lighter " VTerm-line-mode"
-	;;   (read-only-mode -1))
-
-	;; (defun vterm-extra-read-and-send ()
-	;;   (interactive)
-	;;   (let ((command (buffer-substring-no-properties
-	;; 				 (vterm--get-prompt-point) (vterm--get-end-of-line))))
-	;; 	(vterm-send-C-a)
-	;; 	(vterm-send-C-k)
-	;; 	(vterm-send-string command)
-	;; 	(vterm-send-return)))
-
-	;; (defun evil-collection-vterm-insert (count &optional vcount skip-empty-lines)
-	;;   (interactive
-	;;    (list (prefix-numeric-value current-prefix-arg)
-	;;          (and (evil-visual-state-p)
-	;;               (memq (evil-visual-type) '(line block))
-	;;               (save-excursion
-	;;                 (let ((m (mark)))
-	;;                   ;; go to upper-left corner temporarily so
-	;;                   ;; `count-lines' yields accurate results
-	;;                   (evil-visual-rotate 'upper-left)
-	;;                   (prog1 (count-lines evil-visual-beginning evil-visual-end)
-	;;                     (set-mark m)))))
-	;;          (evil-visual-state-p)))
-	;;   (evil-insert count vcount skip-empty-lines)
-	;;   (let ((p (point)))
-	;;     (vterm-reset-cursor-point)
-	;;     (while (< p (point))
-	;;       (vterm-send-left)
-	;;       (forward-char -1))
-	;;     (while (> p (point))
-	;;       (vterm-send-right)
-	;;       (forward-char 1))))
-
-	;; (evil-collection-define-key 'normal 'vterm-mode-map "i" 'evil-collection-vterm-insert)
-
-	;; (defun vterm-evil-insert ()
-	;;   (interactive)
-	;;   (vterm-goto-char (point))
-	;;   (call-interactively #'evil-insert))
-
-	;; (defun vterm-evil-append ()
-	;;   (interactive)
-	;;   (vterm-goto-char (1+ (point)))
-	;;   (call-interactively #'evil-append))
-
-	;; (defun vterm-evil-delete ()
-	;;   "Provide similar behavior as `evil-delete'."
-	;;   (interactive)
-	;;   (let ((inhibit-read-only t))
-	;;     (cl-letf (((symbol-function #'delete-region) #'vterm-delete-region))
-	;;       (call-interactively 'evil-delete))))
-
-	;; (defun vterm-evil-change ()
-	;;   "Provide similar behavior as `evil-change'."
-	;;   (interactive)
-	;;   (let ((inhibit-read-only t))
-	;;     (cl-letf (((symbol-function #'delete-region) #'vterm-delete-region))
-	;;       (call-interactively 'evil-change))))
-
-	;; (defun my-vterm-hook()
-	;;   (evil-local-mode 1)
-	;;   (evil-define-key 'normal 'local "a" 'vterm-evil-append)
-	;;   (evil-define-key 'normal 'local "d" 'vterm-evil-delete)
-	;;   (evil-define-key 'normal 'local "i" 'vterm-evil-insert)
-	;;   (evil-define-key 'normal 'local "c" 'vterm-evil-change))
-
-	;; (add-hook 'vterm-mode-hook 'my-vterm-hook)
-
-	;;;;;;;;;;;;;;;;;;;;EVIL VTERM;;;;;;;;;;;;;;;;END
 
 	(use-package multi-vterm
 	  :config
@@ -1474,9 +1392,11 @@
 
 	(use-package auctex
 	  :defer t
-	  :ensure auctex
-	  :config
-	  (setq TeX-PDF-mode t))
+	  :hook
+	  (LaTeX-mode . prettify-symbols-mode)
+	  (LaTeX-mode . flyspell-mode)
+	  ;; (LaTeX-mode . TeX-PDF-mode)
+	  )
 
 	(use-package auctex-latexmk
 	  :config
@@ -1544,11 +1464,7 @@
 
 ** Iedit
    #+begin_src emacs-lisp
-	 (use-package iedit
-	   ;:config
-	   ;; A bug fix for maybe a bug for macintosh
-	   ;(global-set-key (kbd "C-c ;") 'iedit)
-	   )
+	 (use-package iedit)
    #+end_src
 
 ** YAML
@@ -1558,32 +1474,32 @@
 	
 ** LSP
    #+begin_src emacs-lisp
-	 (use-package lsp-mode
-	   :commands (lsp lsp-deferred)
-	   :hook ((c-mode . lsp)
-			  (c++-mode . lsp)
-			  ;; (csharp-mode . lsp)
-			  (html-mode . lsp)
-			  (css-mode . lsp)
-			  (rjsx-mode . lsp)
-			  (typescript-mode . lsp)
-			  (javascript-mode . lsp)
-			  (python-mode . lsp))
-	   :init
-	   (setq lsp-keymap-prefix "C-c l") ;; Or Space L
-	   :config
-	   (lsp-enable-which-key-integration t)
-	   (setq lsp-pylsp-plugins-flake8-ignore ["E231" "E501" "E127" "E701" "F405" "F403" "E221" "E226"])
-	   ;; (setq lsp-csharp-server-path "/home/hamza/src/omnisharp-server/OmniSharp/bin/Debug/OmniSharp.exe")
-	   )
+	 ;; (use-package lsp-mode
+	 ;;   :commands (lsp lsp-deferred)
+	 ;;   :hook ((c-mode . lsp)
+	 ;; 		 (c++-mode . lsp)
+	 ;; 		 ;; (csharp-mode . lsp)
+	 ;; 		 (html-mode . lsp)
+	 ;; 		 (css-mode . lsp)
+	 ;; 		 (rjsx-mode . lsp)
+	 ;; 		 (typescript-mode . lsp)
+	 ;; 		 (javascript-mode . lsp)
+	 ;; 		 (python-mode . lsp))
+	 ;;   :init
+	 ;;   (setq lsp-keymap-prefix "C-c l") ;; Or Space L
+	 ;;   :config
+	 ;;   (lsp-enable-which-key-integration t)
+	 ;;   (setq lsp-pylsp-plugins-flake8-ignore ["E231" "E501" "E127" "E701" "F405" "F403" "E221" "E226"])
+	 ;;   ;; (setq lsp-csharp-server-path "/home/hamza/src/omnisharp-server/OmniSharp/bin/Debug/OmniSharp.exe")
+	 ;;   )
 
-	 ;; TODOOOOO: Consult-LSP
-	 (setq gc-cons-threshold (* 100 1024 1024)
-		   read-process-output-max (* 1024 1024)
-		   treemacs-space-between-root-nodes nil
-		   company-idle-delay 0.0
-		   company-minimum-prefix-length 1
-		   lsp-idle-delay 0.1)  ;; clangd is fast
+	 ;; ;; TODOOOOO: Consult-LSP
+	 ;; (setq gc-cons-threshold (* 100 1024 1024)
+	 ;; 	  read-process-output-max (* 1024 1024)
+	 ;; 	  treemacs-space-between-root-nodes nil
+	 ;; 	  company-idle-delay 0.0
+	 ;; 	  company-minimum-prefix-length 1
+	 ;; 	  lsp-idle-delay 0.1)  ;; clangd is fast
 
 
 	 ;; (use-package lsp-mode
@@ -1621,7 +1537,9 @@
 	 (use-package eglot
 	   :config
 	   (add-to-list 'eglot-server-programs
-		 '(csharp-mode . ("csharp-ls"))))
+					'(csharp-mode . ("csharp-ls"))
+					'((web-mode :language-id "html") .
+					  ("tailwindcss-language-server"))))
    #+end_src
 
 ** Lisp
@@ -1681,12 +1599,6 @@
 		  (add-to-list 'auto-mode-alist '("\\.lass\\'" . lass-mode))
    #+end_src
 
-** Hindent
-   #+begin_src emacs-lisp
-	 (use-package hindent
-	   :defer t)
-   #+end_src
-
 ** Haskell
    #+begin_src emacs-lisp
 	 (use-package haskell-mode
@@ -1697,6 +1609,9 @@
 	   (message "Loaded haskell-mode")
 	   (setq haskell-indent-level 2)
 	   (setq haskell-mode-stylish-haskell-path "brittany"))
+
+	 ;; (use-package hindent
+	 ;;   :defer t)
 
 	 ;; (use-package haskell-mode
 	 ;;   :defer t
@@ -1897,37 +1812,41 @@
 
 	#+RESULTS:
 
-*** C Auto Complete & Flymake
+*** C, Auto Complete & Flymake
         #+begin_src emacs-lisp
+		  (use-package meson-mode
+			:defer t)
+
 		  ;; (defun hamza/ac-c-header-init ()
-	  ;;   (require 'auto-complete-c-headers)
-	  ;;   (add-to-list 'ac-sources 'ac-source-c-headers)
-	  ;;   (add-to-list 'achead:include-directories '"/usr/lib32/gcc/i686-pc-linux-gnu/10.2.1/include"))
+		  ;;   (require 'auto-complete-c-headers)
+		  ;;   (add-to-list 'ac-sources 'ac-source-c-headers)
+		  ;;   (add-to-list 'achead:include-directories '"/usr/lib32/gcc/i686-pc-linux-gnu/10.2.1/include"))
 
-	  ;; (use-package auto-complete-c-headers
-	  ;;   :init
-	  ;;   (add-hook 'c-mode-hook 'hamza/ac-c-header-init)
-	  ;;   (add-hook 'c++-mode-hook 'hamza/ac-c-header-init))
+		  ;; (use-package auto-complete-c-headers
+		  ;;   :init
+		  ;;   (add-hook 'c-mode-hook 'hamza/ac-c-header-init)
+		  ;;   (add-hook 'c++-mode-hook 'hamza/ac-c-header-init))
 
-	  ;; (defun hamza/flymake-google-init ()
-	  ;;   (require 'flymake-google-cpplint)
-	  ;;   (custom-set-variables
-	  ;;    '(flymake-google-cpplint-command "cpplint"))
-	  ;;   (flymake-google-cpplint-load))
+		  ;; (defun hamza/flymake-google-init ()
+		  ;;   (require 'flymake-google-cpplint)
+		  ;;   (custom-set-variables
+		  ;;    '(flymake-google-cpplint-command "cpplint"))
+		  ;;   (flymake-google-cpplint-load))
 
-	  ;; (use-package flymake-google-cpplint
-	  ;;   :init
-	  ;;   (add-hook 'c-mode-hook 'hamza/flymake-google-init)
-	  ;;   (add-hook 'c++-mode-hook 'hamza/flymake-google-init))
+		  ;; (use-package flymake-google-cpplint
+		  ;;   :init
+		  ;;   (add-hook 'c-mode-hook 'hamza/flymake-google-init)
+		  ;;   (add-hook 'c++-mode-hook 'hamza/flymake-google-init))
 
-	  ;; (use-package flymake-cursor
-	  ;;   :config
-	  ;;   (flymake-cursor-mode))
+		  ;; (use-package flymake-cursor
+		  ;;   :config
+		  ;;   (flymake-cursor-mode))
 
-	  ;; (use-package google-c-style
-	  ;;   :init
-	  ;;   (add-hook 'c-mode-common-hook 'google-set-c-style)
-	  ;;   (add-hook 'c-mode-common-hook 'google-make-newline-indent))
+		  ;; (use-package google-c-style
+		  ;;   :init
+		  ;;   (add-hook 'c-mode-common-hook 'google-set-c-style)
+		  ;;   (add-hook 'c-mode-common-hook 'google-make-newline-indent))
+
          #+end_src
 
 *** C#

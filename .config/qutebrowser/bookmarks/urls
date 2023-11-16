@@ -182,3 +182,48 @@ https://github.com/puppylinux-woof-CE/woof-CE/tree/testing/woof-distro/x86/void/
 https://forum.puppylinux.com/viewtopic.php?t=5270 VoidPup Woof-CE builds (32bit and 64bit versions) - Puppy Linux Discussion Forum
 https://piped.garudalinux.org/watch?v=6XnHHyS-a9w Puppy Linux -JWM - Feb 2023 version . tips for seniors Overview & Tour. - Piped
 https://github.com/zidansec/CloudPeler zidansec/CloudPeler: CrimeFlare is a useful tool for bypassing websites protected by CloudFlare WAF, with this tool you can easily see the real IP of websites that have been protected by CloudFlare. The resulting information is certainly very useful for conducting further penetration testing, and analyzing websites with the same server.
+https://github.com/picocss/pico/issues/201 Picocss with Svelte
+https://preline.co/index.html Preline UI, crafted with Tailwind CSS
+https://github.com/saadeghi/theme-change saadeghi/theme-change: Change CSS theme with toggle, buttons or select using CSS custom properties and localStorage
+https://scottspence.com/posts/customising-fonts-in-tailwind-css-and-daisyui Customising Fonts in Tailwind CSS and daisyUI - Scott Spence
+https://www.educatorstechnology.com/2022/11/9-great-books-on-impact-of-technology.html 9 Great Books on The Impact of Technology on Learning and Cognition - Educators Technology
+https://www.inc.com/nicolas-cole/5-books-that-will-make-you-rethink-your-relationship-with-technology-for-the-bet.html 5 Books That Will Make You Rethink Your Relationship With Technology (for the Better) | Inc.com
+https://mitpress.mit.edu/9780262539968/ Technology and Society
+https://www.svgminify.com/ SVG Minifier
+https://natclark.com/tutorials/svelte-working-with-svgs/ Working With SVGs in Svelte
+https://svelte.dev/examples/hello-world Hello world • Svelte Examples
+https://unix.stackexchange.com/questions/320070/is-there-a-colour-picker-that-works-with-wayland-or-xwayland arch linux - Is there a colour picker that works with Wayland or XWayland? - Unix & Linux Stack Exchange
+https://www.udemy.com/course/common-lisp-programming/ Common Lisp programming: from novice to effective developer | Udemy
+https://docs.emmet.io/cheat-sheet/ Cheat Sheet
+https://github.com/Malabarba/aggressive-indent-mode GitHub - Malabarba/aggressive-indent-mode: Emacs minor mode that keeps your code always indented. More reliable than electric-indent-mode.
+https://github.com/alphapapa/yequake#org-capture GitHub - alphapapa/yequake: Drop-down Emacs frames, like Yakuake
+https://piped.kavin.rocks/watch?v=v-jLg1VaYzo Emacs org-speed commands: WOW! - Piped
+https://piped.kavin.rocks/watch?v=cRUCiF2MwP4 Teaching with Emacs+org-mode - Piped
+https://piped.kavin.rocks/watch?v=uraPXeLfWcM Have Emacs Teach You Chinese - Piped
+https://piped.kavin.rocks/results?search_query=org-drill+emacs org-drill emacs - Piped
+https://www.reddit.com/r/Common_Lisp/comments/xz2ibr/i_made_a_wayland_client_from_scratch_for_common/ I made a Wayland client from scratch for Common Lisp : Common_Lisp
+https://github.com/aymanosman/cl-missile-command GitHub - aymanosman/cl-missile-command
+https://stackoverflow.com/questions/4034042/random-in-common-lisp-not-so-random (Random) in Common Lisp Not So Random? - Stack Overflow
+https://sr.ht/~shunter/wayflan/ wayflan: From-scratch Wayland client for Common Lisp
+https://github.com/kaveh808/kons-9 GitHub - kaveh808/kons-9: Common Lisp 3D Graphics Project
+https://github.com/melusina-org/cl-rashell GitHub - melusina-org/cl-rashell: Resilient replicant Shell Programming Library for Common Lisp
+https://stackoverflow.com/questions/1986822/common-lisp-timer Common Lisp Timer - Stack Overflow
+https://mollermara.com/blog/emacs-sysadmin/ Emacs is great for sysadmins, too | Josh Moller-Mara
+https://lisp-stat.dev/ Lisp-Stat
+https://lisp-stat.dev/docs/examples/plotting/ Plotting | Lisp-Stat
+https://github.com/Gleefre/hello-alien/ GitHub - Gleefre/hello-alien: SBCL *works* on android as part of an application!
+https://www.lrde.epita.fr/~didier/software/lisp/clon.php Clon: the Command-Line Options Nuker
+https://stevelosh.com/blog/2021/03/small-common-lisp-cli-programs/ Writing Small CLI Programs in Common Lisp / Steve Losh
+https://lisp-journey.gitlab.io/blog/these-years-in-common-lisp-2022-in-review/#games These Years in Common Lisp: 2022 in review - Lisp journey
+https://www.cs.virginia.edu/~evans/cs655/readings/smalltalk.html Design Principles Behind Smalltalk
+https://hashnode.com/@fukamachi Eitaro Fukamachi — Hashnode
+https://fukamachi.hashnode.dev/ fukamachi tech notes
+http://cheat.sh/clojure/:learn cheat.sh/clojure/:learn
+https://vishpat.github.io/lisp-rs-wasm/ Lisp Interpreter in a Browser using WASM
+https://github.com/KikyTokamuro/todolist-cl GitHub - KikyTokamuro/todolist-cl: Todolist with web UI, written in Common Lisp
+https://book.babashka.org/#usage Babashka book
+https://github.com/babashka/babashka GitHub - babashka/babashka: Native, fast starting Clojure interpreter for scripting
+https://www.reddit.com/r/lisp/comments/zwtfak/writing_scripts_in_lisp/ writing scripts in lisp : lisp
+https://coalton-lang.github.io/ The Coalton Language
+https://lispcookbook.github.io/cl-cookbook/debugging.html Debugging
+https://stackoverflow.com/questions/951021/what-is-the-javascript-version-of-sleep What is the JavaScript version of sleep()? - Stack Overflow

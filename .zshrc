@@ -213,7 +213,7 @@ DOTFILES=/home/hamza/wrk/dotfiles
 
 ### ALIASES ### START
 alias cl="clear";
-alias ls="exa";
+alias ls="eza --icons --group-directories-first";
 alias ll="ls -l";
 alias la="ls -la";
 alias update="home-manager switch";

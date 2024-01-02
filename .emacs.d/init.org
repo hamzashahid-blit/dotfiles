@@ -1383,69 +1383,69 @@
 
 * Tex
   #+begin_src emacs-lisp
-	;; Add ConTeXt to my Emacs Path so that eshell, term etc. could use them
-	(add-to-list 'exec-path "/home/hamza/.src/context-linux/tex/texmf-linux/bin")
+	;; ;; Add ConTeXt to my Emacs Path so that eshell, term etc. could use them
+	;; (add-to-list 'exec-path "/home/hamza/.src/context-linux/tex/texmf-linux/bin")
 
-	;; Annoying to download so commenting for now
-	(use-package pdf-tools
-	  :config
-	  (pdf-tools-install)
-	  (setq-default pdf-view-display-size 'fit-page)
-	  (setq pdf-annot-activate-created-annotations t)
-	  (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
-	  (define-key pdf-view-mode-map (kbd "C-r") 'isearch-backward)
-	  (add-hook 'pdf-view-mode-hook (lambda ()
-									  (bms/pdf-midnite-amber)))) ; automatically turns on midnight-mode for pdfs
+	;; ;; Annoying to download so commenting for now
+	;; (use-package pdf-tools
+	;;   :config
+	;;   (pdf-tools-install)
+	;;   (setq-default pdf-view-display-size 'fit-page)
+	;;   (setq pdf-annot-activate-created-annotations t)
+	;;   (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
+	;;   (define-key pdf-view-mode-map (kbd "C-r") 'isearch-backward)
+	;;   (add-hook 'pdf-view-mode-hook (lambda ()
+	;; 								  (bms/pdf-midnite-amber)))) ; automatically turns on midnight-mode for pdfs
 
-	(use-package auctex
-	  :defer t
-	  :hook
-	  (LaTeX-mode . prettify-symbols-mode)
-	  (LaTeX-mode . flyspell-mode)
-	  ;; (LaTeX-mode . TeX-PDF-mode)
-	  )
+	;; (use-package auctex
+	;;   :defer t
+	;;   :hook
+	;;   (LaTeX-mode . prettify-symbols-mode)
+	;;   (LaTeX-mode . flyspell-mode)
+	;;   ;; (LaTeX-mode . TeX-PDF-mode)
+	;;   )
 
-	(use-package auctex-latexmk
-	  :config
-	  (auctex-latexmk-setup)
-	  (setq auctex-latexmk-inherit-TeX-PDF-mode t))
+	;; (use-package auctex-latexmk
+	;;   :config
+	;;   (auctex-latexmk-setup)
+	;;   (setq auctex-latexmk-inherit-TeX-PDF-mode t))
 
-	(use-package reftex
-	  :defer t
-	  :config
-	  (setq reftex-site-prompt-optional-args t)) ;; Prompt for empty optional arguments in cite
+	;; (use-package reftex
+	;;   :defer t
+	;;   :config
+	;;   (setq reftex-site-prompt-optional-args t)) ;; Prompt for empty optional arguments in cite
 
-	(use-package auto-dictionary
-	  :init
-	  (add-hook 'flyspell-mode-hook (lambda ()
-									  (auto-dictionary-mode 1))))
+	;; (use-package auto-dictionary
+	;;   :init
+	;;   (add-hook 'flyspell-mode-hook (lambda ()
+	;; 								  (auto-dictionary-mode 1))))
 
-	;; (use-package company-auctex
-	;;   :init (company-auctex-init))
+	;; ;; (use-package company-auctex
+	;; ;;   :init (company-auctex-init))
 
-	(use-package tex
-	  :ensure auctex
-	  :mode ("\\.tex\\'" . latex-mode)
-	  :config
-	  (setq TeX-source-correlate-mode t                            ;; Forward and inverse search
-			TeX-source-correlate-method 'synctex                   ;; Search forward and backward with synctex method
-			TeX-auto-save t                                        ;; Auto save file if not saved within certain time
-			TeX-parse-self t)                                      ;; Parse file after loading it if no style hook is found for it.
-	  (setq-default TeX-master "paper.tex")                        ;; Master file associated with the current buffer
-	  (setq reftex-plug-into-AUCTeX t)                             ;; Use reftex with auctex
-	  (pdf-tools-install)                                          ;; Make sure pdf-tools is setup
-	  (setq TeX-view-program-selection '((output-pdf "PDF Tools")) ;; Output through pdf-tools
-			TeX-source-correlate-start-server t)                   ;; Start the search server with tex
+	;; (use-package tex
+	;;   :ensure auctex
+	;;   :mode ("\\.tex\\'" . latex-mode)
+	;;   :config
+	;;   (setq TeX-source-correlate-mode t                            ;; Forward and inverse search
+	;; 		TeX-source-correlate-method 'synctex                   ;; Search forward and backward with synctex method
+	;; 		TeX-auto-save t                                        ;; Auto save file if not saved within certain time
+	;; 		TeX-parse-self t)                                      ;; Parse file after loading it if no style hook is found for it.
+	;;   (setq-default TeX-master "paper.tex")                        ;; Master file associated with the current buffer
+	;;   (setq reftex-plug-into-AUCTeX t)                             ;; Use reftex with auctex
+	;;   (pdf-tools-install)                                          ;; Make sure pdf-tools is setup
+	;;   (setq TeX-view-program-selection '((output-pdf "PDF Tools")) ;; Output through pdf-tools
+	;; 		TeX-source-correlate-start-server t)                   ;; Start the search server with tex
 
-	  ;; Update PDF buffers after successful LaTeX runs
-	  (add-hook 'TeX-after-compilation-finished-functions
-				#'TeX-revert-document-buffer)
+	;;   ;; Update PDF buffers after successful LaTeX runs
+	;;   (add-hook 'TeX-after-compilation-finished-functions
+	;; 			#'TeX-revert-document-buffer)
 
-	  ;; Turn on reftex and flyspell modes
-	  (add-hook 'LaTeX-mode-hook
-		  (lambda ()
-			(reftex-mode t)
-			(flyspell-mode t))))
+	;;   ;; Turn on reftex and flyspell modes
+	;;   (add-hook 'LaTeX-mode-hook
+	;; 	  (lambda ()
+	;; 		(reftex-mode t)
+	;; 		(flyspell-mode t))))
 
   #+end_src
 

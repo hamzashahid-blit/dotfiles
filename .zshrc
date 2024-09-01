@@ -1,19 +1,31 @@
+# For python3-pip
+PATH=$PATH:~/.local/bin;
+
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
-# For python3-pip
-PATH=$PATH:~/.local/bin
+# if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+#   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+# fi
 
 # For .NET
-PATH=$PATH:~/src/dotnet:~/.dotnet/tools
+# PATH=$PATH:~/src/dotnet:~/.dotnet/tools
+export DOTNET_ROOT=$HOME/src/dotnet
+export PATH=$PATH:$DOTNET_ROOT/tools
+export PATH=$PATH:$DOTNET_ROOT
 export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
-PATH=$PATH:~/src/omnisharp-server/OmniSharp/bin/Debug
+# For Flutter/Android/Dart
+export ANDROID=$HOME/Android
+export PATH=$ANDROID/cmdline-tools/latest:$PATH
+export PATH=$ANDROID/cmdline-tools/latest/bin:$PATH
+export PATH=$ANDROID/platform-tools:$PATH
+export ANDROID_SDK=$HOME/Android # Full caps like dat?
+export PATH=$ANDROID_SDK:$PATH
+export PATH="$PATH":"$HOME/.pub-cache/bin"
+
+# PATH=$PATH:~/src/omnisharp-server/OmniSharp/bin/Debug
 
 # Lines configured by zsh-newuser-install
 HISTFILE=~/.histfile
@@ -24,35 +36,37 @@ SAVEHIST=10000
 #unsetopt beep
 
 ### PLUGINS ### START
-source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
+#source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
+# OORRRR
+#source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 ### PLUGINS ### END
 
 
-# Basic auto/tab complete:
-autoload -U compinit && compinit
-zstyle ':completion:*' menu select
-zmodload zsh/complist
-# compinit
-_comp_options+=(globdots)		# Include hidden files.
-# vi mode
-bindkey -v
-export KEYTIMEOUT=1
-# Make Emacs the default editor for programs like git
-export VISUAL=e
-# Use vim keys in tab complete menu:
-bindkey -M menuselect 'h' vi-backward-char
-bindkey -M menuselect 'k' vi-up-line-or-history
-bindkey -M menuselect 'l' vi-forward-char
-bindkey -M menuselect 'j' vi-down-line-or-history
-bindkey -v '^?' backward-delete-char
-bindkey '^ ' autosuggest-accept
-# If can't find from history, find from auto-tab
-ZSH_AUTOSUGGEST_STRATEGY=(history completion)
-# ZSH_AUTOSUGGEST_STRATEGY=completion
+# # Basic auto/tab complete:
+# autoload -U compinit && compinit
+# zstyle ':completion:*' menu select
+# zmodload zsh/complist
+# # compinit
+# _comp_options+=(globdots)		# Include hidden files.
+# # vi mode
+# bindkey -v
+# export KEYTIMEOUT=1
+# # Make Emacs the default editor for programs like git
+# export VISUAL=e
+# # Use vim keys in tab complete menu:
+# bindkey -M menuselect 'h' vi-backward-char
+# bindkey -M menuselect 'k' vi-up-line-or-history
+# bindkey -M menuselect 'l' vi-forward-char
+# bindkey -M menuselect 'j' vi-down-line-or-history
+# bindkey -v '^?' backward-delete-char
+# bindkey '^ ' autosuggest-accept
+# # If can't find from history, find from auto-tab
+# #ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+# # ZSH_AUTOSUGGEST_STRATEGY=completion
 
-# Alt-. like in Bash, which inserts last argument of previous command
-bindkey -M viins '\e.' insert-last-word
-# source /usr/share/kubectl/completion.zsh
+# # Alt-. like in Bash, which inserts last argument of previous command
+# bindkey -M viins '\e.' insert-last-word
+# # source /usr/share/kubectl/completion.zsh
 
 
 ### FZF ### START
@@ -88,9 +102,9 @@ _fzf_comprun() {
 ### FZF ### END
 
 
-# Edit line in vim with ctrl-e:
-autoload edit-command-line; zle -N edit-command-line
-bindkey '^e' edit-command-line
+# # Edit line in vim with ctrl-e:
+# autoload edit-command-line; zle -N edit-command-line
+# bindkey '^e' edit-command-line
 
 
 ### Custom Functions ### START
@@ -193,8 +207,9 @@ say() {
 vterm_set_directory() {
 	vterm_cmd update-pwd "$PWD/"
 }
-autoload -U add-zsh-hook
-add-zsh-hook -Uz chpwd (){ vterm_set_directory }
+
+# autoload -U add-zsh-hook
+# add-zsh-hook -Uz chpwd (){ vterm_set_directory }
 
 # Always find the VTerm Library
 #if [[ "$INSIDE_EMACS" = 'vterm' ]] \\
@@ -246,20 +261,22 @@ alias gitdf='git --git-dir=$DOTFILES --work-tree=$HOME'
 #autoload -Uz compinit
 #compinit
 # End of lines added by compinstall
-source ~/.config/powerlevel10k/powerlevel10k.zsh-theme
+# source ~/.config/powerlevel10k/powerlevel10k.zsh-theme
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 ## Build Own LibreOffice extensions with UNO
 # source /home/hamza/libreoffice_sdk/Hamzas-PC/setsdkenv_unix.sh
 # OO_SDK_HOME=~/src/libreoffice/odk/settings
 
-# pnpm
-export PNPM_HOME="/home/hamza/.local/share/pnpm"
-export PATH="$PNPM_HOME:$PATH"
-# pnpm end
+# # pnpm
+# export PNPM_HOME="/home/hamza/.local/share/pnpm"
+# export PATH="$PNPM_HOME:$PATH"
+# # pnpm end
 
 
-###TMP TMP TMP TMP STABLE DIFFUSION
-alias python=python310
+# ###TMP TMP TMP TMP STABLE DIFFUSION
+# alias python=python310
+
+# alias xs=xi $(xpkg -a | fzf)

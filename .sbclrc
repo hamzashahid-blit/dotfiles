@@ -1,15 +1,8 @@
-;; Good error messages and no Memory Faults.
-;(proclaim '(optimize (safety 3) (debug 3) (space 0) (speed 0) (compilation-speed 3)))
-(proclaim '(optimize (safety 3) (speed 0) (debug 3) (space 0) (compilation-speed 0)))
-
-;(ql:quickload :slynk)
-
-;; Completely turn off string elisision (cutting off too long of a string) for Sly
-;(setf (cdr (assoc 'slynk:*string-elision-length* slynk:*slynk-pprint-bindings*)) nil)
 
 ;;; The following lines added by ql:add-to-init-file:
-;; #-quicklisp
+#-quicklisp
 (let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
                                        (user-homedir-pathname))))
   (when (probe-file quicklisp-init)
     (load quicklisp-init)))
+

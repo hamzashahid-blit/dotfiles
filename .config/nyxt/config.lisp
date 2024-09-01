@@ -1,24 +1,35 @@
-(define-configuration buffer
-  ((default-modes
-    (pushnew 'nyxt/vi-mode:vi-normal-mode %slot-value%))))
+(defvar *my-search-engines*
+  (list
+   '("au" "https://priv.au/search?q=~a" "https://priv.au")
+   '("google" "https://google.com/search?q=~a" "https://google.com")
+   '("python3" "https://docs.python.org/3/search.html?q=~a"
+     "https://docs.python.org/3")
+   '("doi" "https://dx.doi.org/~a" "https://dx.doi.org/"))
+  "List of search engines.")
 
-(define-configuration prompt-buffer
-  ((default-modes
-    (append '(nyxt/vi-mode:vi-insert-mode) %slot-default%))))
+(define-configuration browser
+  ((theme theme:+dark-theme+ :doc "Setting dark theme")))
 
+;; (define-configuration browser
+;;   ((theme (make-instance
+;;            'theme:theme
+;;            :dark-p t
+;;            :background-color "#282a36"
+;;            :text-color "#f8f8f2"
+;;            :accent-color "#ff5555"
+;;            :primary-color "#50fa7b"
+;;            :secondary-color "#bd93f9"
+;;            :tertiary-color "#6272a4"
+;;            :quaternary-color "#44475a"))))
 
-
-;; (define-configuration buffer
-;;  ((default-modes (append '(nyxt::vi-normal-mode) %slot-default%))))
-
-;; (define-configuration prompt-buffer
-;;  ((default-modes (append '(nyxt::vi-insert-mode) %slot-default%))))
-
-;; (defmethod customize-instance ((input-buffer input-buffer) &key)
-;;   (disable-modes* 'nyxt/emacs-mode:emacs-mode input-buffer)
-;;   (enable-modes* 'nyxt/vi-mode:vi-normal-mode input-buffer))
-;; (setf (uiop/os:getenv "WEBKIT_DISABLE_COMPOSITING_MODE") "1")
-;; (defmethod customize-instance
-;;            ((nyxt/hint-mode:hint-mode nyxt/hint-mode:hint-mode) &key)
-;;   (setf (slot-value nyxt/hint-mode:hint-mode 'nyxt/hint-mode:hints-alphabet)
-;;           "asdfghjkl;"))
+;; ;; Custom Dark-mode for webpages
+;; (define-configuration nyxt/style-mode:dark-mode
+;;   ((style #.(cl-css:css
+;;              '((*
+;;                 :background-color "#282a36 !important"
+;;                 :background-image "none !important"
+;;                 :color "#f8f8f2")
+;;                (a
+;;                 :background-color "#282a36 !important"
+;;                 :background-image "none !important"
+;;                 :color "#6272a4 !important"))))))

@@ -135,10 +135,32 @@
   		   :files (:defaults ("etc/styles/" "etc/styles/*" "doc/*.texi")))
     :config
     (setq org-ellipsis "…"
-  		org-src-window-setup 'current-window)
+  		org-src-window-setup 'current-window
+  		org-startup-with-inline-images t
+  		org-startup-with-latex-preview t
+  	    org-image-actual-width nil)
     (set-face-attribute 'org-ellipsis nil :inherit 'default :box nil)
     ;; Open links in org with C-c C-o
-    (with-eval-after-load 'org-ctags (setq org-open-link-functions nil)))
+    (with-eval-after-load 'org-ctags (setq org-open-link-functions nil))
+    (org-babel-do-load-languages
+     'org-babel-load-languages '((C . t)
+  							   (latex . t))))
+
+  (use-package org-download
+    :ensure (:package "org-download"
+  					:source nil
+  					:protocol https
+  					:inherit t
+  					:depth 1
+  					:repo "abo-abo/org-download"
+  					:fetcher github
+  					:files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
+  							"doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+  							(:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
+  									  "LICENSE" "README*" "*-pkg.el")))
+    :custom
+    (org-download-heading-lvl nil)
+    (org-download-edit-cmd "krita %s"))
 
   (use-package org-modern
     :ensure (:package "org-modern"
@@ -370,11 +392,73 @@
     (add-hook 'dired-mode-hook #'all-the-icons-dired-mode))
 
   (elpaca-process-queues)
+
+  (use-package yasnippet
+    :ensure (:package "yasnippet"
+  					:source nil
+  					:protocol https
+  					:inherit t
+  					:depth 1
+  					:repo "joaotavora/yasnippet"
+  					:fetcher github
+  					:files ("yasnippet.el" "snippets")))
+
+  (use-package yasnippet-snippets
+    :ensure (:package "yasnippet-snippets"
+  					:source nil
+  					:protocol https
+  					:inherit t
+  					:depth 1
+  					:repo "AndreaCrotti/yasnippet-snippets"
+  					:fetcher github
+  					:files ("*.el" "snippets" ".nosearch"))
+    :config
+    (setq yas-snippet-dirs
+  		`("/home/hamza/.emacs.d/snippets" ;; Personal Snippets
+  		  ,yasnippet-snippets-dir))
+    (yas-global-mode 1))
+
+  (use-package magit
+    :ensure (:package "magit"
+  					:source nil
+  					:protocol https
+  					:inherit t
+  					:depth 1
+  					:fetcher github
+  					:repo "magit/magit"
+  					:files ("lisp/magit*.el" "lisp/git-rebase.el" "docs/magit.texi" "docs/AUTHORS.md" "LICENSE"
+  							"Documentation/magit.texi" "Documentation/AUTHORS.md"
+  							(:exclude "lisp/magit-libgit.el" "lisp/magit-libgit-pkg.el"
+  									  "lisp/magit-section.el" "lisp/magit-section-pkg.el"))))
+#+end_src
+
+* Programming
+#+begin_src emacs-lisp
+  (use-package typescript-mode
+    :defer t
+    :ensure (:package "typescript-mode"
+                      :source "MELPA"
+                      :protocol https
+                      :inherit t
+                      :depth 1
+                      :fetcher github
+                      :repo "emacs-typescript/typescript.el"
+                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
+                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo"
+                              "lisp/*.el" (:exclude ".dir-locals.el"
+                                                    "test.el" "tests.el" "*-test.el" "*-tests.el"
+                                                    "LICENSE" "README*" "*-pkg.el"))))
 #+end_src
 
 * Custom
 #+begin_src emacs-lisp
+  (setq-default indent-tabs-mode nil)
+  (setq-default tab-width 4)
+  (setq c-set-style "k&r")
+  (setq c-basic-offset 4)
+
   ;;; ONLY M-SPC keybindings are here...
+  (setq cycle-spacing-actions '(delete-all-space restore))
   (global-set-key (kbd "M-<return>") #'cycle-spacing)
   (global-unset-key (kbd "M-SPC"))
   (global-set-key (kbd "M-SPC f c e") (lambda () (interactive) (find-file "~/.emacs.d/init.org")))
@@ -387,137 +471,148 @@
     "M-SPC f c e" "Emacs Config"
     "M-SPC f c h" "Hyprland Config")
 
-  ;; C/C++
-  (define-skeleton hamza/skel-c-main
-    "Insert a typical main function."
-    nil
-    "int main(int argc, char** argv) {\n"
-    > _
-    "\n}"
-    )
+  ;; ;; Org mode
+  ;; (define-skeleton hamza/src-block
+  ;;   "Insert src block in org mode"
+  ;;   "Language: "
+  ;;   "#+begin_src " str
+  ;;   > _
+  ;;   "\n#+end_src")
 
-  (define-skeleton hamza/skel-c-comment
-    "Insert comment."
-    nil
-    "/* "
-    > _
-    " */"
-    )
+  ;; ;; C/C++
+  ;; (define-skeleton hamza/skel-c-main
+  ;;   "Insert a typical main function."
+  ;;   nil
+  ;;   "int main(int argc, char** argv) {\n"
+  ;;   > _
+  ;;   "\n}"
+  ;;   )
 
-  (define-skeleton hamza/skel-c-printf
-    "Insert the common printf statement at point."
-    nil
-    > "printf(\""
-    _
-    "\");"
-    )
+  ;; (define-skeleton hamza/skel-c-comment
+  ;;   "Insert comment."
+  ;;   nil
+  ;;   "/* "
+  ;;   > _
+  ;;   " */"
+  ;;   )
 
-  (define-skeleton hamza/skel-c-printf-flush
-    "Insert the common printf statement followed by an fflush at point."
-    nil
-    > "printf(\""
-    _
-    "\");fflush(stdout);"
-    )
+  ;; (define-skeleton hamza/skel-c-printf
+  ;;   "Insert the common printf statement at point."
+  ;;   nil
+  ;;   > "printf(\""
+  ;;   _
+  ;;   "\");"
+  ;;   )
 
-  (define-skeleton hamza/skel-c-printf-newline
-    "Insert a printf statement with newline"
-    nil
-    "printf(\"\\n\");"
-  )
+  ;; (define-skeleton hamza/skel-c-printf-flush
+  ;;   "Insert the common printf statement followed by an fflush at point."
+  ;;   nil
+  ;;   > "printf(\""
+  ;;   _
+  ;;   "\");fflush(stdout);"
+  ;;   )
 
-  (define-skeleton hamza/skel-c-loop-for
-    "Insert a for-loop with an int counter variable."
-    "Counter variable(int): "
-    >"for(" str "=0;" str "<" _ ";" str "++) {" \n
-    \n
-    > "}" \n
-    )
+  ;; (define-skeleton hamza/skel-c-printf-newline
+  ;;   "Insert a printf statement with newline"
+  ;;   nil
+  ;;   "printf(\"\\n\");"
+  ;; )
 
-  (define-skeleton hamza/skel-c-loop-while
-    "Insert a while-loop template."
-    > "while(" _ ") {"\n
-    \n
-    >"}" \n
-    )
+  ;; (define-skeleton hamza/skel-c-loop-for
+  ;;   "Insert a for-loop with an int counter variable."
+  ;;   "Counter variable(int): "
+  ;;   >"for(" str "=0;" str "<" _ ";" str "++) {" \n
+  ;;   \n
+  ;;   > "}" \n
+  ;;   )
 
-  (define-skeleton hamza/skel-c-fflush
-    "Insert a fflush of stdout."
-    nil
-    > "fflush(stdout);"
-    )
+  ;; (define-skeleton hamza/skel-c-loop-while
+  ;;   "Insert a while-loop template."
+  ;;   > "while(" _ ") {"\n
+  ;;   \n
+  ;;   >"}" \n
+  ;;   )
 
-  (define-skeleton hamza/skel-c-fprintf
-    "Insert a fprintf statement at point asking for the stream."
-    "STREAM: "
-    > "fprintf(" str ",\""
-    _
-    "\\n\");"
-    )
+  ;; (define-skeleton hamza/skel-c-fflush
+  ;;   "Insert a fflush of stdout."
+  ;;   nil
+  ;;   > "fflush(stdout);"
+  ;;   )
 
-  (define-skeleton hamza/skel-c-include
-    "Insert a precompiler include statement, asking for what to include.
-  You need to give the quotation marks or the angles yourself."
-    "include what? "
-    > "# include " str
-    )
+  ;; (define-skeleton hamza/skel-c-fprintf
+  ;;   "Insert a fprintf statement at point asking for the stream."
+  ;;   "STREAM: "
+  ;;   > "fprintf(" str ",\""
+  ;;   _
+  ;;   "\\n\");"
+  ;;   )
 
-  (define-skeleton hamza/skel-cc-loop-for
-    "Insert a for-loop with an int counter variable."
-    >"for(int " (setq v1 (skeleton-read "Var: ")) | "i" " = 0; "
-    v1 | "i" " < " @ - "; ++" v1 | "i" ") {" \n
-    > @ _
-    "\n}")
+  ;; (define-skeleton hamza/skel-c-include
+  ;;   "Insert a precompiler include statement, asking for what to include.
+  ;; You need to give the quotation marks or the angles yourself."
+  ;;   "include what? "
+  ;;   > "# include " str
+  ;;   )
 
-  (define-skeleton hamza/skel-cc-cout
-    "Insert a cout statement at point"
-    nil
-    > "std::cout << " _ " << \"\\n\"")
+  ;; (define-skeleton hamza/skel-cc-loop-for
+  ;;   "Insert a for-loop with an int counter variable."
+  ;;   >"for(int " (setq v1 (skeleton-read "Var: ")) | "i" " = 0; "
+  ;;   v1 | "i" " < " @ - "; ++" v1 | "i" ") {" \n
+  ;;   > @ _
+  ;;   "\n}")
 
-  (defvar *skeleton-markers* nil
-    "Markers for locations saved in skeleton-positions")
+  ;; (define-skeleton hamza/skel-cc-cout
+  ;;   "Insert a cout statement at point"
+  ;;   nil
+  ;;   > "std::cout << " _ " << \"\\n\"")
 
-  (add-hook 'skeleton-end-hook 'skeleton-make-markers)
+  ;; (defvar *skeleton-markers* nil
+  ;;   "Markers for locations saved in skeleton-positions")
 
-  (defun skeleton-make-markers ()
-    (while *skeleton-markers*
-      (set-marker (pop *skeleton-markers*) nil))
-    (setq *skeleton-markers*
-  	(mapcar 'copy-marker (reverse skeleton-positions))))
+  ;; (add-hook 'skeleton-end-hook 'skeleton-make-markers)
 
-  (defun skeleton-next-position (&optional reverse)
-    "Jump to next position in skeleton.
-           REVERSE - Jump to previous position in skeleton"
-    (interactive "P")
-    (let* ((positions (mapcar 'marker-position *skeleton-markers*))
-  		 (positions (if reverse (reverse positions) positions))
-  		 (comp (if reverse '> '<))
-  		 pos)
-      (when positions
-        (if (catch 'break
-  			(while (setq pos (pop positions))
-  			  (when (funcall comp (point) pos)
-  				(throw 'break t))))
-  		  (goto-char pos)
-  		(goto-char (marker-position
-  					(car *skeleton-markers*)))))))
+  ;; (defun skeleton-make-markers ()
+  ;;   (while *skeleton-markers*
+  ;;     (set-marker (pop *skeleton-markers*) nil))
+  ;;   (setq *skeleton-markers*
+  ;; 	(mapcar 'copy-marker (reverse skeleton-positions))))
 
-  (global-unset-key (kbd "M-<tab>"))
-  (global-set-key (kbd "M-<tab>") #'skeleton-next-position)
+  ;; (defun skeleton-next-position (&optional reverse)
+  ;;   "Jump to next position in skeleton.
+  ;;          REVERSE - Jump to previous position in skeleton"
+  ;;   (interactive "P")
+  ;;   (let* ((positions (mapcar 'marker-position *skeleton-markers*))
+  ;; 		 (positions (if reverse (reverse positions) positions))
+  ;; 		 (comp (if reverse '> '<))
+  ;; 		 pos)
+  ;;     (when positions
+  ;;       (if (catch 'break
+  ;; 			(while (setq pos (pop positions))
+  ;; 			  (when (funcall comp (point) pos)
+  ;; 				(throw 'break t))))
+  ;; 		  (goto-char pos)
+  ;; 		(goto-char (marker-position
+  ;; 					(car *skeleton-markers*)))))))
 
-  (define-abbrev-table 'c-mode-abbrev-table
-    '(("main" "" hamza/skel-c-main)
-  	("pf" ""  hamza/skel-c-printf)
-  	("pff" ""  hamza/skel-c-printf-flush)
-  	("pfn" ""  hamza/skel-c-printf-newline)
-  	("for" ""  hamza/skel-c-loop-for)
-  	("while" ""  hamza/skel-c-loop-while)
-  	("fflush" ""  hamza/skel-c-fflush)
-  	("fprintf" ""  hamza/skel-c-fprintf)
-  	("inc" ""  hamza/skel-c-include)
-  	("comment" ""  hamza/skel-c-comment)))
+  ;; (global-unset-key (kbd "M-<tab>"))
+  ;; (global-set-key (kbd "M-<tab>") #'skeleton-next-position)
 
-  (define-abbrev-table 'c++-mode-abbrev-table
-    '(("for" ""  hamza/skel-cc-loop-for)
-  	("cout" ""  hamza/skel-cc-cout)))
+  ;; (define-abbrev-table 'org-mode-abbrev-table
+  ;;   '(("src" "" hamza/src-block)))
+
+  ;; (define-abbrev-table 'c-mode-abbrev-table
+  ;;   '(("main" "" hamza/skel-c-main)
+  ;; 	("pf" ""  hamza/skel-c-printf)
+  ;; 	("pff" ""  hamza/skel-c-printf-flush)
+  ;; 	("pfn" ""  hamza/skel-c-printf-newline)
+  ;; 	("for" ""  hamza/skel-c-loop-for)
+  ;; 	("while" ""  hamza/skel-c-loop-while)
+  ;; 	("fflush" ""  hamza/skel-c-fflush)
+  ;; 	("fprintf" ""  hamza/skel-c-fprintf)
+  ;; 	("inc" ""  hamza/skel-c-include)
+  ;; 	("comment" ""  hamza/skel-c-comment)))
+
+  ;; (define-abbrev-table 'c++-mode-abbrev-table
+  ;;   '(("for" ""  hamza/skel-cc-loop-for)
+  ;; 	("cout" ""  hamza/skel-cc-cout)))
 #+end_src

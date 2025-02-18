@@ -13,7 +13,7 @@
    tab-width 4                  ; Set width for tabs
    delete-by-moving-to-trash t  ; Delete files to trash
    backup-directory-alist '(("." . "~/.emacs.d/saves")) ;; Save tmp file saves to ~/.saves
-   create-lockfiles t           ; They are good but mess up code files... and I'm a programmer
+   create-lockfiles nil         ; They are good but mess up code files... and I'm a programmer
    history-length 1000
    initial-scratch-message ";;「グルーフマクス」へようこそ => Welcome to 'Groovemacs'\n\n")
 
@@ -33,7 +33,31 @@
   					(unless (frame-focus-state)
   					  (garbage-collect))))
 
-  (add-to-list 'default-frame-alist '(font . "Iosevka Custom 12"))
+  ;; Transparent terminal emacs
+  (defun set-background-for-terminal (&optional frame)
+    (or frame (setq frame (selected-frame)))
+    "unsets the background color in terminal mode"
+    (unless (display-graphic-p frame)
+      (set-face-background 'default "unspecified-bg" frame)))
+  (add-hook 'after-make-frame-functions 'set-background-for-terminal)
+  (add-hook 'window-setup-hook 'set-background-for-terminal)
+
+  (defvar hamza/font "Iosevka Custom 12"
+    "Main font")
+  (defvar hamza/font-jp "Noto Sans Mono CJK JP 12"
+    "Japanese font")
+  (defvar hamza/font-sc "Noto Sans Mono CJK SC 12"
+    "Chinese font")
+
+  (defun hamza/use-font (&optional frame)
+    (when frame
+      (select-frame frame))
+    (set-face-attribute 'default nil :font hamza/font)
+    ;(set-fontset-font t 'chinese-gbk (font-spec :family hamza/font-sc))
+    (dolist (charset '(kana han symbol cjk-misc bopomofo japanese-jisx0213.2004-1)) ; JP is later to override
+      (set-fontset-font t charset (font-spec :family hamza/font-jp))))
+
+  (add-hook 'after-make-frame-functions #'hamza/use-font)
   (add-to-list 'default-frame-alist '(alpha-background . 70))
 
   (savehist-mode t)
@@ -50,18 +74,26 @@
     (when (not (active-minibuffer-window))
   	(text-scale-decrease 1.5)))
   (add-hook 'after-change-major-mode-hook 'auto-zoom-inc)
+  ;; Undo zoom
   (add-hook 'help-mode-hook 'auto-zoom-dec)
+  (add-hook 'org-agenda-mode-hook 'auto-zoom-dec)
 
   (column-number-mode t) ; display character index at point
   (global-display-line-numbers-mode t)
   (setq display-line-numbers-type 'relative)
   (dolist (mode '(org-mode-hook
-  					term-mode-hook
-  					shell-mode-hook
-  					eshell-mode-hook
-  					vterm-mode-hook
-  					eat-mode))
-  	(add-hook mode (lambda () (display-line-numbers-mode 0))))
+                  org-agenda-mode-hook
+  				term-mode-hook
+  				shell-mode-hook
+  				eshell-mode-hook
+  				vterm-mode-hook
+  				eat-mode))
+    (add-hook mode (lambda () (display-line-numbers-mode 0))))
+#+end_src
+
+* Functional Tweaks
+#+begin_src emacs-lisp
+  (setq async-shell-command-buffer "confirm-kill-process")
 #+end_src
 
 * Package Init
@@ -123,6 +155,7 @@
   		   :repo "doomemacs/themes"
   		   :files (:defaults "themes/*.el" "themes/*/*.el" "extensions/*.el"))
     :config
+    (setq doom-gruvbox-dark-variant "hard")
     (load-theme 'doom-gruvbox t))
 
   (use-package org
@@ -137,14 +170,114 @@
     (setq org-ellipsis "…"
   		org-src-window-setup 'current-window
   		org-startup-with-inline-images t
-  		org-startup-with-latex-preview t
-  	    org-image-actual-width nil)
+  		org-startup-with-latex-preview nil
+  	    org-image-actual-width nil
+          org-log-into-drawer t)
     (set-face-attribute 'org-ellipsis nil :inherit 'default :box nil)
+    (add-hook 'org-mode-hook #'org-indent-mode)
     ;; Open links in org with C-c C-o
     (with-eval-after-load 'org-ctags (setq org-open-link-functions nil))
     (org-babel-do-load-languages
      'org-babel-load-languages '((C . t)
   							   (latex . t))))
+
+  (use-package org-modern
+    :ensure (:package "org-modern"
+  		   :repo "https://github.com/minad/org-modern"
+  		   :local-repo "org-modern"
+  		   :files ("*" (:exclude ".git" "LICENSE")))
+    :config
+    (setq org-modern-hide-stars 'leading
+          org-auto-align-tags nil
+  		org-tags-column 0
+  		org-catch-invisible-edits 'show-and-error
+  		org-special-ctrl-a/e t
+  		org-insert-heading-respect-content t
+  		org-hide-emphasis-markers t
+  		org-pretty-entities t
+  		org-modern-star 'replace)
+    (global-org-modern-mode))
+
+  (use-package org-super-agenda
+    :ensure (:package "org-super-agenda"
+                      :source nil
+                      :protocol https
+                      :inherit t
+                      :depth 1
+                      :fetcher github
+                      :repo "alphapapa/org-super-agenda"
+                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
+                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
+                                        "LICENSE" "README*" "*-pkg.el")))
+    :config
+    (setq org-agenda-files '("~/shr/org/todo.org")
+          org-agenda-span 1
+          org-agenda-start-day "+0d"
+          org-agenda-skip-timestamp-if-done t
+          org-agenda-skip-deadline-if-done t
+          org-agenda-skip-scheduled-if-done t
+          org-agenda-skip-scheduled-if-deadline-is-shown t
+          org-agenda-skip-timestamp-if-deadline-is-shown t
+          org-agenda-current-time-string "← now ────────────────────"
+          org-agenda-time-grid '((daily) () "" "")
+          org-agenda-timegrid-use-ampm t
+          org-agenda-prefix-format '((agenda . "  %?-2i %t ")
+                                     (todo . "  %-2i")
+                                     (tags . "  %-2i")
+                                     (search . "  %-2i"))
+          org-agenda-hide-tags-regexp ".*"
+          org-agenda-category-icon-alist
+          `(("Errands" ("💪") nil nil :ascent center)
+            ("Career" ("🎯") nil nil :ascent center)
+            ("Japanese" ("🎌") nil nil :ascent center)
+            ("Study" ("📚") nil nil :ascent center)
+            ("Life" ("🐳") nil nil :ascent center)
+            ("Contemplation" ("💫") nil nil :ascent center)
+            ("Wishlist" ("🤲") nil nil :ascent center)
+            ("Goals" ("🏆") nil nil :ascent center)))
+    ;; (set-face-attribute 'org-agenda-date nil :inherit 'outline-1 :height 1.15)
+    ;; (set-face-attribute 'org-agenda-date-today :inherit 'outline-1 :height 1.15)
+    ;; (set-face-attribute 'org-agenda-date-weekend :inherit 'outline-1 :height 1.15)
+    ;; (set-face-attribute 'org-agenda-date-weekend-today :inherit 'outline-1 :height 1.15)
+    (set-face-attribute 'org-super-agenda-header nil
+                        :weight 'bold
+                        :height 1.05
+                        :box '(:line-width 2 :style diary-button))
+    (org-super-agenda-mode))
+
+  (setq org-super-agenda-groups
+        '((:name "Overdue ❗ "
+                 :order 2
+                 :scheduled past
+                 :face 'error)
+          (:name "Errands 💪 "
+                 :order 3
+                 :tag "errand")
+          (:name "Career 🎯 "
+                 :order 4
+                 :tag "career")
+          (:name "Study 📚 "
+                 :order 5
+                 :tag "study")
+          (:name "Life 🐳 "
+                 :order 6
+                 :tag "life")
+          (:name "Contemplation 💫 "
+                 :order 7
+                 :tag "thought")
+          (:name "Wishlist 🤲 "
+                 :order 8
+                 :tag "wish")
+          (:name "Goals 🏆 "
+                 :order 9
+                 :tag "goal")
+          (:name "Today 🗓️ "
+                 :order 1
+                 :time-grid t
+                 :date today
+                 :scheduled today
+                 :face 'warning)))
 
   (use-package org-download
     :ensure (:package "org-download"
@@ -160,31 +293,46 @@
   									  "LICENSE" "README*" "*-pkg.el")))
     :custom
     (org-download-heading-lvl nil)
-    (org-download-edit-cmd "krita %s"))
+    (org-download-edit-cmd "krita %s")
+    (org-download-image-org-width 350)
+    (org-download-screenshot-method "grim -g \"$(slurp)\" %s"))
 
-  (use-package org-modern
-    :ensure (:package "org-modern"
-  		   :repo "https://github.com/minad/org-modern"
-  		   :local-repo "org-modern"
-  		   :files ("*" (:exclude ".git" "LICENSE")))
+  (use-package olivetti
+    :ensure (:package "olivetti"
+                      :source nil
+                      :protocol https
+                      :inherit t
+                      :depth 1
+                      :fetcher github
+                      :repo "rnkn/olivetti"
+                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
+                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
+                                        "LICENSE" "README*" "*-pkg.el")))
     :config
-    (setq org-auto-align-tags nil
-  		org-tags-column 0
-  		org-catch-invisible-edits 'show-and-error
-  		org-special-ctrl-a/e t
-  		org-insert-heading-respect-content t
-  		org-hide-emphasis-markers t
-  		org-pretty-entities t
-  		org-modern-star 'replace
-  		org-agenda-tags-column 0
-  		org-agenda-block-separator ?─
-  		org-agenda-time-grid
-  		'((daily today require-timed)
-  		  (800 1000 1200 1400 1600 1800 2000)
-  		  " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
-  		org-agenda-current-time-string
-  		"◀── now ─────────────────────────────────────────────────")
-  	(global-org-modern-mode))
+    (add-hook 'org-mode-hook #'olivetti-mode)
+    (add-hook 'org-agenda-mode-hook #'olivetti-mode))
+
+  (use-package paredit
+    :ensure (:package "paredit"
+                      :source nil
+                      :protocol https
+                      :inherit t
+                      :depth 1
+                      :fetcher git
+                      :url "https://mumble.net/~campbell/git/paredit.git"
+                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
+                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
+                                        "LICENSE" "README*" "*-pkg.el")))
+    :config
+    (autoload 'enable-paredit-mode "paredit"
+      "Turn on pseudo-structural editing of Lisp code."
+      t)
+    (add-hook 'emacs-lisp-mode-hook       'enable-paredit-mode)
+    (add-hook 'lisp-mode-hook             'enable-paredit-mode)
+    (add-hook 'lisp-interaction-mode-hook 'enable-paredit-mode)
+    (add-hook 'scheme-mode-hook           'enable-paredit-mode))
 
   (use-package lambda-line
     :ensure (:type git :host github :repo "lambda-emacs/lambda-line")
@@ -224,7 +372,9 @@
   		   :local-repo "vertico"
   		   :files ("*" (:exclude ".git" "LICENSE")))
     :init
-    (vertico-mode))
+    (vertico-mode)
+    :config
+    (setq vertico-cycle t))
 
   (use-package orderless
     :ensure (:package "orderless"
@@ -254,7 +404,6 @@
     (which-key-mode))
 
   (use-package corfu
-    :defer t
     :ensure (:package "corfu"
   					:source nil
   					:protocol https
@@ -273,10 +422,10 @@
     (corfu-echo-documentation 0)    ;; if NIL, do not show documentation in the echo area
     (corfu-auto-prefix 3)           ;; Run Corfu after 'arg' characters are entered
     (corfu-auto-delay 0)            ;; No delay before trying to auto-complete
-    ;; (lsp-completion-provider :none) ;; Use corfu instead for lsp completions
+    (lsp-completion-provider :none) ;; Use corfu instead for lsp completions
     (tab-always-indent 'complete)   ;; Enable indentation+completion using the TAB
     :config
-    (global-corfu-mode t))
+    (add-hook 'prog-mode-hook #'corfu-mode))
 
   (use-package marginalia
     :ensure (:package "marginalia"
@@ -319,7 +468,7 @@
   					:files ("*" (:exclude ".git")))
     :custom
     (undo-tree-auto-save-history t)
-    (undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
+    (undo-tree-history-directory-alist '((".*" . "/home/hamza/.emacs.d/undo")))
     :config
     (global-undo-tree-mode))
 
@@ -434,6 +583,8 @@
 
 * Programming
 #+begin_src emacs-lisp
+  (setq js-indent-level 4)
+
   (use-package typescript-mode
     :defer t
     :ensure (:package "typescript-mode"
@@ -447,7 +598,66 @@
                               "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo"
                               "lisp/*.el" (:exclude ".dir-locals.el"
                                                     "test.el" "tests.el" "*-test.el" "*-tests.el"
-                                                    "LICENSE" "README*" "*-pkg.el"))))
+                                                    "LICENSE" "README*" "*-pkg.el")))
+    :config
+    (setq typescript-indent-level 4))
+
+  (use-package tide
+    :defer t
+    :ensure (:package "tide"
+                      :source nil
+                      :protocol https
+                      :inherit t
+                      :depth 1
+                      :fetcher github
+                      :repo "ananthakumaran/tide"
+                      :files (:defaults "tsserver"))
+    :config
+    (setq typescript-indent-level 4))
+
+  (use-package svelte-mode
+    :defer t
+    :ensure (:package "svelte-mode"
+                      :source "MELPA"
+                      :protocol https
+                      :inherit t
+                      :depth 1
+                      :fetcher github
+                      :repo "leafOfTree/svelte-mode"
+                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
+                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                                        "*-tests.el" "LICENSE" "README*" "*-pkg.el"))))
+
+  (use-package rainbow-delimiters
+    :ensure (:package "rainbow-delimiters"
+                      :source "MELPA"
+                      :protocol https
+                      :inherit t
+                      :depth 1
+                      :fetcher github
+                      :repo "Fanael/rainbow-delimiters"
+                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
+                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
+                                        "LICENSE" "README*" "*-pkg.el")))
+    :config
+    (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
+#+end_src
+
+* Language Learning
+** Japanese
+#+begin_src emacs-lisp
+  (use-package kanji-mode
+    :defer t
+    :ensure (:package "kanji-mode"
+                      :source nil
+                      :protocol https
+                      :inherit t
+                      :depth 1
+                      :fetcher github
+                      :repo "wsgac/kanji-mode"
+                      :files (:defaults "kanji")))
 #+end_src
 
 * Custom
@@ -457,19 +667,96 @@
   (setq c-set-style "k&r")
   (setq c-basic-offset 4)
 
+  (defun hamza/org-draw-mnemonic (basename &optional ask-drawing-program?)
+    (interactive "sFile basename (important word(s)): ")
+    (let ((mnemonic-filename (format "mmm-mnemonic-%s-%s.png" basename (org-id-uuid))))
+      (call-process-shell-command (concat "magick -size 1920x1080 xc:transparent PNG32:"
+                                          mnemonic-filename)
+                                  nil 0)
+      (insert "#+attr_org: :width 500px")
+      (org-newline-and-indent)
+      (org-insert-link t (format "file:%s" mnemonic-filename))
+      (call-process-shell-command (if ask-drawing-program?
+                                      (read-from-minibuffer "Drawing program/command: ")
+                                    (concat "krita " mnemonic-filename))
+                                  nil 0)
+      (org-redisplay-inline-images)))
+
+  (defun hamza/org-jp-memory-palace (word-kanji pitch-index meanings &optional ask-drawing-program? ask-yomitan-link? ask-browser?)
+    "Inserts a memory palace entry for japanese vocabulary. Requires the KANJI-MODE and ORG-DOWNLOAD package. Copy an image (of a word entry in a dictionary) to your clipboard and enter the japanese word in kanji (this requires a way to enter the word in japanese like an IME) as the WORD-KANJI argument to use this function."
+    (interactive "sWord in kanji: \nnPitch accent index (-1 = Before, 0 = Heiban, 1 = Atamadaka, ...): \nsMeaning(s): ")
+    (kanji-mode 1)
+    (let* ((word-hiragana (km:kanji->hiragana word-kanji))
+           (word-romaji (km:all->romaji word-kanji))
+           (pitch-uncountable-kana [#x3083 #x3085 #x3087]) ; small ya, yu, yo
+           (word-with-pitch
+            (progn (dotimes (i (1+ pitch-index)) ;; Compensation for small kana being counted
+                     (when (seq-contains pitch-uncountable-kana (elt word-hiragana i))
+                       (cl-incf pitch-index)))
+                   (setf word-with-pitch
+                         (cond ((= pitch-index -1) (format "\\%s" word-hiragana)) ; previous word
+                               ((= pitch-index  0) word-hiragana)                 ; heiban
+                               (t (format "%s\\%s" (substring word-hiragana 0 pitch-index) ; normal
+                                          (substring word-hiragana pitch-index))))))))
+      (insert (format "%s (%s) - %s\n" word-kanji word-with-pitch meanings))
+      (let ((browser nil))
+        (call-process-shell-command (concat
+                                     (setf browser (if ask-browser?
+                                                       (read-from-minibuffer "Browser command program name: ")
+                                                     "chromium"))
+                                     " \""
+                                     (if ask-yomitan-link?
+                                         (read-from-minibuffer "Yomitan opening command (chromium \'chrome-extension://...\'): ")
+                                       (format "chrome-extension://likgccmbimhjbgkjambclfkhldnlhbnn/search.html?query=%s" word-kanji))
+                                     "\"") nil 0)
+        (kill-new word-kanji)
+        (sleep-for 0.2)               ; Kinda makes me sad ngl :-(
+        (when (and (string= (getenv "XDG_BACKEND") "wayland")
+                   (= (shell-command "printenv HYPRLAND_INSTANCE_SIGNATURE") 0)
+                   (string= browser "chromium"))
+          (shell-command "hyprctl dispatch focuswindow '^(Chromium)'")
+          (sleep-for 0.2))               ; Makes me sadder tbh :--((
+        (when (y-or-n-p "Has yomitan loaded? (do you want to take a screenshot?)")
+          (message "Take a screenshot of a dictionary entry for %s" word-kanji)
+          (setf org-download-screenshot-basename (format "mmm-scrot-%s-%s" word-romaji (org-id-uuid)))
+          (org-download-screenshot)
+          (setf org-download-screenshot-basename (get 'org-download-screenshot-basename 'saved-value)))
+        (when (y-or-n-p "Do you want to draw a mnemonic?")
+          (message "Draw your mnemonic for %s" word-kanji)
+          (hamza/org-draw-mnemonic (km:all->romaji word-kanji) ask-drawing-program?)))))
+
+  (defun hamza/org-open-image (edit-command)
+    (interactive "sEdit Command w/o filename (default: \"krita\"): ")
+    (let* ((filename (org-element-property :path (org-element-context)))
+           (edit-command (format "%s %s" (if (string-blank-p edit-command) "krita" edit-command) filename)))
+      (call-process-shell-command edit-command nil 0)))
+
   ;;; ONLY M-SPC keybindings are here...
   (setq cycle-spacing-actions '(delete-all-space restore))
   (global-set-key (kbd "M-<return>") #'cycle-spacing)
   (global-unset-key (kbd "M-SPC"))
+  (global-set-key (kbd "M-SPC a") #'org-agenda-list)
+  (global-set-key (kbd "M-SPC f t") (lambda () (interactive) (find-file "~/shr/org/todo.org")))
   (global-set-key (kbd "M-SPC f c e") (lambda () (interactive) (find-file "~/.emacs.d/init.org")))
   (global-set-key (kbd "M-SPC f c h") (lambda () (interactive) (find-file "~/.config/hypr/hyprland.conf")))
+  (global-set-key (kbd "M-SPC f m") (lambda () (interactive) (find-file "~/shr/org/memory-palaces.org")))
   (global-set-key (kbd "M-SPC M-e") (lambda () (interactive) (find-file "~/.emacs.d/init.org")))
+  (global-set-key (kbd "M-SPC o j") #'hamza/org-jp-memory-palace)
+  (global-set-key (kbd "M-SPC o i") #'hamza/org-open-image)
+  (global-set-key (kbd "M-SPC o m") #'hamza/org-draw-mnemonic)
   (which-key-add-key-based-replacements
     "M-SPC M-e" "Emacs Config"
+    "M-SPC a" "Agenda"
     "M-SPC f" "Files"
+    "M-SPC f t" "Todo"
     "M-SPC f c" "Configs"
     "M-SPC f c e" "Emacs Config"
-    "M-SPC f c h" "Hyprland Config")
+    "M-SPC f c h" "Hyprland Config"
+    "M-SPC f m" "Memory Palaces"
+    "M-SPC o" "Org Mode"
+    "M-SPC o j" "JP Memory Palace"
+    "M-SPC o i" "Open/Edit Image"
+    "M-SPC o m" "Draw MMM Mnemonic")
 
   ;; ;; Org mode
   ;; (define-skeleton hamza/src-block

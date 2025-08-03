@@ -94,6 +94,34 @@
 * Functional Tweaks
 #+begin_src emacs-lisp
   (setq async-shell-command-buffer "confirm-kill-process")
+
+  (when (getenv "WAYLAND_DISPLAY")
+    (setq wl-copy-p nil
+          interprogram-cut-function (lambda (text)
+                                      (setq-local process-connection-type 'pipe)
+                                      (setq wl-copy-p (start-process "wl-copy" nil "wl-copy" "-f" "-n"))
+                                      (process-send-string wl-copy-p text)
+                                      (process-send-eof wl-copy-p))
+          interprogram-paste-function (lambda ()
+                                        (unless (and wl-copy-p (process-live-p wl-copy-p))
+                                          (shell-command-to-string "wl-paste -n | tr -d '\r'")))))
+
+  ;; Setup xclip for wayland
+  (use-package xclip
+    :ensure (:package "xclip"
+                      :source nil
+                      :protocol https
+                      :inherit t
+                      :depth 1
+                      :repo "git://git.sv.gnu.org/emacs/elpa"
+                      :local-repo "xclip"
+                      :branch "externals/xclip"
+                      :files ("*" (:exclude ".git")))
+    :config
+    (setq xclip-program "wl-copy")
+    (setq xclip-select-enable-clipboard t)
+    (setq xclip-mode t)
+    (setq xclip-method (quote wl-copy)))
 #+end_src
 
 * Package Init
@@ -643,6 +671,45 @@
                                         "LICENSE" "README*" "*-pkg.el")))
     :config
     (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
+
+  (use-package pyvenv
+    :defer t
+    :ensure (:package "pyvenv"
+                      :source "MELPA"
+                      :protocol https
+                      :inherit t
+                      :depth 1
+                      :fetcher github
+                      :repo "jorgenschaefer/pyvenv"
+                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
+                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
+                                        "LICENSE" "README*" "*-pkg.el"))))
+
+  (use-package lsp-dart
+    :defer t
+    :ensure (:package "lsp-dart"
+                      :source "MELPA"
+                      :protocol https
+                      :inherit t
+                      :depth 1
+                      :repo "emacs-lsp/lsp-dart"
+                      :fetcher github
+                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
+                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                                        "*-tests.el" "LICENSE" "README*" "*-pkg.el"))))
+
+  (use-package flutter
+    :defer t
+    :ensure (:package "flutter"
+                      :source "MELPA"
+                      :protocol https
+                      :inherit t
+                      :depth 1
+                      :repo "amake/flutter.el"
+                      :fetcher github
+                      :files ("flutter.el" "flutter-project.el" "flutter-l10n.el")))
 #+end_src
 
 * Language Learning
@@ -658,6 +725,34 @@
                       :fetcher github
                       :repo "wsgac/kanji-mode"
                       :files (:defaults "kanji")))
+
+  ;; (use-package org-anki
+  ;;   :defer t
+  ;;   :ensure (:package "org-anki"
+  ;;                     :source nil
+  ;;                     :protocol https
+  ;;                     :inherit t
+  ;;                     :depth 1
+  ;;                     :fetcher github
+  ;;                     :repo "eyeinsky/org-anki"
+  ;;                     :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
+  ;;                             "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+  ;;                             (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+  ;;                                       "*-tests.el" "LICENSE" "README*" "*-pkg.el"))))
+
+  (use-package anki-editor
+    :defer t
+    :ensure (:package "anki-editor"
+                      :source nil
+                      :protocol https
+                      :inherit t
+                      :depth 1
+                      :fetcher github
+                      :repo "anki-editor/anki-editor"
+                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
+                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                                        "*-tests.el" "LICENSE" "README*" "*-pkg.el"))))
 #+end_src
 
 * Custom
@@ -744,6 +839,8 @@
   (global-set-key (kbd "M-SPC o j") #'hamza/org-jp-memory-palace)
   (global-set-key (kbd "M-SPC o i") #'hamza/org-open-image)
   (global-set-key (kbd "M-SPC o m") #'hamza/org-draw-mnemonic)
+  (global-set-key (kbd "M-SPC o c") (lambda () (interactive) (anki-editor-set-note-type nil "Cloze")))
+  (global-set-key (kbd "M-SPC o b") (lambda () (interactive) (anki-editor-set-note-type nil "Basic")))
   (which-key-add-key-based-replacements
     "M-SPC M-e" "Emacs Config"
     "M-SPC a" "Agenda"
@@ -756,7 +853,9 @@
     "M-SPC o" "Org Mode"
     "M-SPC o j" "JP Memory Palace"
     "M-SPC o i" "Open/Edit Image"
-    "M-SPC o m" "Draw MMM Mnemonic")
+    "M-SPC o m" "Draw MMM Mnemonic"
+    "M-SPC o c" "Anki Cloze Card"
+    "M-SPC o b" "Anki Basic Card")
 
   ;; ;; Org mode
   ;; (define-skeleton hamza/src-block

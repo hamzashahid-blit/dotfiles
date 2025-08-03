@@ -112,10 +112,17 @@ e_client () {
 	emacsclient -c -a "" $1 &
 }
 
+et_client () {
+    emacsclient -t -a "" $1
+}
+
 xs () { 
     xpkg -a | fzf -m --preview 'xq {1}' --preview-window=right:66%:wrap | xargs -ro sudo xbps-install -Su #xi
 }
 
+git_pass () {
+  eval `keychain --eval`
+}
 github_pass () {
   eval `keychain --eval --agents ssh id_github`
 }
@@ -232,7 +239,8 @@ alias ls="eza --icons --group-directories-first";
 alias ll="ls -l";
 alias la="ls -la";
 alias update="home-manager switch";
-alias e="e_client";
+alias e="et_client";
+alias eg="e_client";
 # alias ffe="find_file";
 alias gpass="codeberg_pass";
 alias ghpass="github_pass"
@@ -246,6 +254,10 @@ alias mypipes="cpipes -p30 -c 'cc241d' -c '98971a' -c 'd79921' -c '458588' -c 'b
 alias gitdf='git --git-dir=$DOTFILES --work-tree=$HOME'
 ### ALIASES ### END
 
+eval `ssh-agent` > /dev/null
+ssh-add ~/.ssh/id_github ~/.ssh/id_codeberg > /dev/null 2>&1
+
+pfetch # fastfetch
 
 ## Basic auto/tab complete:
 ## autoload -U compinit
@@ -280,3 +292,12 @@ alias gitdf='git --git-dir=$DOTFILES --work-tree=$HOME'
 # alias python=python310
 
 # alias xs=xi $(xpkg -a | fzf)
+
+# pnpm
+export PNPM_HOME="/home/hamza/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
+

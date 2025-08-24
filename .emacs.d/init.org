@@ -1,8 +1,8 @@
 # -*- after-save-hook: (org-babel-tangle); before-save-hook: (delete-trailing-whitespace)-*-
-#+TITLE: Groovemacs Org Config File
-#+AUTHOR: Hamza Shahid
-#+STARTUP: overview
-#+PROPERTY: header-args:emacs-lisp :exports code :results none :tangle init.el
+#+Title: Groovemacs Org Config File
+#+Author: Hamza Shahid
+#+Startup: overview
+#+Property: header-args:emacs-lisp :exports code :results none :tangle init.el
 
 * UI Tweaks
 #+begin_src emacs-lisp
@@ -91,79 +91,46 @@
     (add-hook mode (lambda () (display-line-numbers-mode 0))))
 #+end_src
 
-* Functional Tweaks
-#+begin_src emacs-lisp
-  (setq async-shell-command-buffer "confirm-kill-process")
-
-  (when (getenv "WAYLAND_DISPLAY")
-    (setq wl-copy-p nil
-          interprogram-cut-function (lambda (text)
-                                      (setq-local process-connection-type 'pipe)
-                                      (setq wl-copy-p (start-process "wl-copy" nil "wl-copy" "-f" "-n"))
-                                      (process-send-string wl-copy-p text)
-                                      (process-send-eof wl-copy-p))
-          interprogram-paste-function (lambda ()
-                                        (unless (and wl-copy-p (process-live-p wl-copy-p))
-                                          (shell-command-to-string "wl-paste -n | tr -d '\r'")))))
-
-  ;; Setup xclip for wayland
-  (use-package xclip
-    :ensure (:package "xclip"
-                      :source nil
-                      :protocol https
-                      :inherit t
-                      :depth 1
-                      :repo "git://git.sv.gnu.org/emacs/elpa"
-                      :local-repo "xclip"
-                      :branch "externals/xclip"
-                      :files ("*" (:exclude ".git")))
-    :config
-    (setq xclip-program "wl-copy")
-    (setq xclip-select-enable-clipboard t)
-    (setq xclip-mode t)
-    (setq xclip-method (quote wl-copy)))
-#+end_src
-
 * Package Init
 #+begin_src emacs-lisp
   (setq package-enable-at-startup nil)
 
-  (defvar elpaca-installer-version 0.7)
+  (defvar elpaca-installer-version 0.11)
   (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
   (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
   (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
   (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
-  								:ref nil :depth 1
-  								:files (:defaults "elpaca-test.el" (:exclude "extensions"))
-  								:build (:not elpaca--activate-package)))
+                                :ref nil :depth 1 :inherit ignore
+                                :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                                :build (:not elpaca--activate-package)))
   (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
-  		 (build (expand-file-name "elpaca/" elpaca-builds-directory))
-  		 (order (cdr elpaca-order))
-  		 (default-directory repo))
-  	(add-to-list 'load-path (if (file-exists-p build) build repo))
-  	(unless (file-exists-p repo)
-  	  (make-directory repo t)
-  	  (when (< emacs-major-version 28) (require 'subr-x))
-  	  (condition-case-unless-debug err
-  		  (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
-  				   ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
-  												   ,@(when-let ((depth (plist-get order :depth)))
-  													   (list (format "--depth=%d" depth) "--no-single-branch"))
-  												   ,(plist-get order :repo) ,repo))))
-  				   ((zerop (call-process "git" nil buffer t "checkout"
-  										 (or (plist-get order :ref) "--"))))
-  				   (emacs (concat invocation-directory invocation-name))
-  				   ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
-  										 "--eval" "(byte-recompile-directory \".\" 0 'force)")))
-  				   ((require 'elpaca))
-  				   ((elpaca-generate-autoloads "elpaca" repo)))
-  			  (progn (message "%s" (buffer-string)) (kill-buffer buffer))
-  			(error "%s" (with-current-buffer buffer (buffer-string))))
-  		((error) (warn "%s" err) (delete-directory repo 'recursive))))
-  	(unless (require 'elpaca-autoloads nil t)
-  	  (require 'elpaca)
-  	  (elpaca-generate-autoloads "elpaca" repo)
-  	  (load "./elpaca-autoloads")))
+         (build (expand-file-name "elpaca/" elpaca-builds-directory))
+         (order (cdr elpaca-order))
+         (default-directory repo))
+    (add-to-list 'load-path (if (file-exists-p build) build repo))
+    (unless (file-exists-p repo)
+      (make-directory repo t)
+      (when (<= emacs-major-version 28) (require 'subr-x))
+      (condition-case-unless-debug err
+          (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                    ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+                                                    ,@(when-let* ((depth (plist-get order :depth)))
+                                                        (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                    ,(plist-get order :repo) ,repo))))
+                    ((zerop (call-process "git" nil buffer t "checkout"
+                                          (or (plist-get order :ref) "--"))))
+                    (emacs (concat invocation-directory invocation-name))
+                    ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                          "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                    ((require 'elpaca))
+                    ((elpaca-generate-autoloads "elpaca" repo)))
+              (progn (message "%s" (buffer-string)) (kill-buffer buffer))
+            (error "%s" (with-current-buffer buffer (buffer-string))))
+        ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+    (unless (require 'elpaca-autoloads nil t)
+      (require 'elpaca)
+      (elpaca-generate-autoloads "elpaca" repo)
+      (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
   (add-hook 'after-init-hook #'elpaca-process-queues)
   (elpaca `(,@elpaca-order))
 
@@ -173,33 +140,50 @@
     (elpaca-use-package-mode))
 #+end_src
 
+* Functional Tweaks
+#+begin_src emacs-lisp
+  (setq async-shell-command-buffer "confirm-kill-process")
+
+  ;; Better support for clipboard and primary selection???
+  ;; (setq x-select-request-type
+  ;;       '(UTF8_STRING COMPOUND_TEXT STRING text/plain\;charset=utf-8))
+
+  (when (getenv "WAYLAND_DISPLAY")
+    (setq wl-copy-process nil)
+    (defun wl-copy (text)
+      (setq wl-copy-process (make-process :name "wl-copy"
+                                          :buffer nil
+                                          :command '("wl-copy" "-f" "-n")
+                                          :connection-type 'pipe
+                                          :noquery t))
+      (process-send-string wl-copy-process text)
+      (process-send-eof wl-copy-process))
+    (defun wl-paste ()
+      (if (and wl-copy-process (process-live-p wl-copy-process))
+          nil                             ; should return nil if we're the current paste owner
+        (shell-command-to-string "wl-paste -n | tr -d \r")))
+    (setq interprogram-cut-function 'wl-copy)
+    (setq interprogram-paste-function 'wl-paste))
+#+end_src
+
 * Basic Packages
 #+begin_src emacs-lisp
   (put 'dired-find-alternate-file 'disabled nil)
 
   (use-package doom-themes
-    :ensure (:package "doom-themes"
-  		   :fetcher github
-  		   :repo "doomemacs/themes"
-  		   :files (:defaults "themes/*.el" "themes/*/*.el" "extensions/*.el"))
+    :ensure t
     :config
     (setq doom-gruvbox-dark-variant "hard")
     (load-theme 'doom-gruvbox t))
 
   (use-package org
-    :ensure (:package "org"
-  		   :local-repo "org"
-  		   :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
-  		   :pre-build (progn (require 'elpaca-menu-org) (elpaca-menu-org--build))
-  		   :autoloads "org-loaddefs.el"
-  		   :build (:not elpaca--generate-autoloads-async)
-  		   :files (:defaults ("etc/styles/" "etc/styles/*" "doc/*.texi")))
+    :ensure t
     :config
     (setq org-ellipsis "…"
-  		org-src-window-setup 'current-window
-  		org-startup-with-inline-images t
-  		org-startup-with-latex-preview nil
-  	    org-image-actual-width nil
+    	org-src-window-setup 'current-window
+    	org-startup-with-inline-images t
+    	org-startup-with-latex-preview nil
+    	org-image-actual-width nil
           org-log-into-drawer t)
     (set-face-attribute 'org-ellipsis nil :inherit 'default :box nil)
     (add-hook 'org-mode-hook #'org-indent-mode)
@@ -207,37 +191,24 @@
     (with-eval-after-load 'org-ctags (setq org-open-link-functions nil))
     (org-babel-do-load-languages
      'org-babel-load-languages '((C . t)
-  							   (latex . t))))
+    			       (latex . t))))
 
   (use-package org-modern
-    :ensure (:package "org-modern"
-  		   :repo "https://github.com/minad/org-modern"
-  		   :local-repo "org-modern"
-  		   :files ("*" (:exclude ".git" "LICENSE")))
+    :ensure t
     :config
     (setq org-modern-hide-stars 'leading
           org-auto-align-tags nil
-  		org-tags-column 0
-  		org-catch-invisible-edits 'show-and-error
-  		org-special-ctrl-a/e t
-  		org-insert-heading-respect-content t
-  		org-hide-emphasis-markers t
-  		org-pretty-entities t
-  		org-modern-star 'replace)
+    	org-tags-column 0
+    	org-catch-invisible-edits 'show-and-error
+    	org-special-ctrl-a/e t
+    	org-insert-heading-respect-content t
+    	org-hide-emphasis-markers t
+    	org-pretty-entities t
+    	org-modern-star 'replace)
     (global-org-modern-mode))
 
   (use-package org-super-agenda
-    :ensure (:package "org-super-agenda"
-                      :source nil
-                      :protocol https
-                      :inherit t
-                      :depth 1
-                      :fetcher github
-                      :repo "alphapapa/org-super-agenda"
-                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
-                                        "LICENSE" "README*" "*-pkg.el")))
+    :ensure t
     :config
     (setq org-agenda-files '("~/shr/org/todo.org")
           org-agenda-span 1
@@ -271,7 +242,8 @@
     (set-face-attribute 'org-super-agenda-header nil
                         :weight 'bold
                         :height 1.05
-                        :box '(:line-width 2 :style diary-button))
+  					; :style diary-button wasn't working in :box
+                        :box '(:line-width 2 :style released-button))
     (org-super-agenda-mode))
 
   (setq org-super-agenda-groups
@@ -308,17 +280,7 @@
                  :face 'warning)))
 
   (use-package org-download
-    :ensure (:package "org-download"
-  					:source nil
-  					:protocol https
-  					:inherit t
-  					:depth 1
-  					:repo "abo-abo/org-download"
-  					:fetcher github
-  					:files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-  							"doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-  							(:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
-  									  "LICENSE" "README*" "*-pkg.el")))
+    :ensure t
     :custom
     (org-download-heading-lvl nil)
     (org-download-edit-cmd "krita %s")
@@ -326,33 +288,13 @@
     (org-download-screenshot-method "grim -g \"$(slurp)\" %s"))
 
   (use-package olivetti
-    :ensure (:package "olivetti"
-                      :source nil
-                      :protocol https
-                      :inherit t
-                      :depth 1
-                      :fetcher github
-                      :repo "rnkn/olivetti"
-                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
-                                        "LICENSE" "README*" "*-pkg.el")))
+    :ensure t
     :config
     (add-hook 'org-mode-hook #'olivetti-mode)
     (add-hook 'org-agenda-mode-hook #'olivetti-mode))
 
   (use-package paredit
-    :ensure (:package "paredit"
-                      :source nil
-                      :protocol https
-                      :inherit t
-                      :depth 1
-                      :fetcher git
-                      :url "https://mumble.net/~campbell/git/paredit.git"
-                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
-                                        "LICENSE" "README*" "*-pkg.el")))
+    :ensure t
     :config
     (autoload 'enable-paredit-mode "paredit"
       "Turn on pseudo-structural editing of Lisp code."
@@ -363,7 +305,7 @@
     (add-hook 'scheme-mode-hook           'enable-paredit-mode))
 
   (use-package lambda-line
-    :ensure (:type git :host github :repo "lambda-emacs/lambda-line")
+    :ensure (:host github :repo "lambda-emacs/lambda-line") ; custom cz default recipe doesn't work!
     :custom
     ;; (Lambda-line-icon-time t) ; requires ClockFace font (see below)
     ;; (lambda-line-clockface-update-fontset "ClockFaceRectSolid") ; set clock icon
@@ -387,59 +329,32 @@
     (setq lambda-line-position 'bottom) ; Set position of status-line
     ;; set divider line in footer
     (when (eq lambda-line-position 'top)
-  	(setq-default mode-line-format (list "%_"))
-  	(setq mode-line-format (list "%_")))
+      (setq-default mode-line-format (list "%_"))
+      (setq mode-line-format (list "%_")))
     (lambda-line-mode)) ; activate lambda-line
 
   (use-package vertico
     :defer t
-    :ensure (:protocol https
-  		   :inherit t
-  		   :depth 1
-  		   :repo "https://github.com/minad/vertico"
-  		   :local-repo "vertico"
-  		   :files ("*" (:exclude ".git" "LICENSE")))
+    :ensure t
     :init
     (vertico-mode)
     :config
     (setq vertico-cycle t))
 
   (use-package orderless
-    :ensure (:package "orderless"
-  		   :source nil
-  		   :protocol https
-  		   :inherit t
-  		   :depth 1
-  		   :repo "https://github.com/oantolin/orderless"
-  		   :local-repo "orderless"
-  		   :files ("*" (:exclude ".git")))
+    :ensure t
     :custom
     (completion-styles '(orderless basic)))
 
   (use-package which-key
     :defer t
-    :ensure (:package "which-key"
-  					:source nil
-  					:protocol https
-  					:inherit t
-  					:depth 1
-  					:repo "https://github.com/emacs-mirror/emacs"
-  					:local-repo "which-key"
-  					:branch "master"
-  					:files ("lisp/which-key.el" (:exclude ".git")))
+    :ensure t
     :config
     (setq which-key-idle-delay 0.3)
     (which-key-mode))
 
   (use-package corfu
-    :ensure (:package "corfu"
-  					:source nil
-  					:protocol https
-  					:inherit t
-  					:depth 1
-  					:repo "https://github.com/minad/corfu"
-  					:local-repo "corfu"
-  					:files ("*" (:exclude ".git" "LICENSE")))
+    :ensure t
     ;; Optional customizations
     :custom
     (corfu-cycle t)                 ;; Enable cycling for `corfu-next/previous'
@@ -456,29 +371,12 @@
     (add-hook 'prog-mode-hook #'corfu-mode))
 
   (use-package marginalia
-    :ensure (:package "marginalia"
-  					:source nil
-  					:protocol https
-  					:inherit t
-  					:depth 1
-  					:repo "https://github.com/minad/marginalia"
-  					:local-repo "marginalia"
-  					:files ("*" (:exclude ".git" "LICENSE")))
+    :ensure t
     :config
     (marginalia-mode))
 
   (use-package multiple-cursors
-    :ensure (:package "multiple-cursors"
-  					:source nil
-  					:protocol https
-  					:inherit t
-  					:depth 1
-  					:fetcher github
-  					:repo "magnars/multiple-cursors.el"
-  					:files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
-  							"doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-  							(:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
-  									  "*-tests.el" "LICENSE" "README*" "*-pkg.el")))
+    :ensure t
     :config
     (global-set-key (kbd "C-c C-<return>") 'mc/edit-lines)
     (global-set-key (kbd "C->") 'mc/mark-next-like-this)
@@ -486,14 +384,7 @@
     (global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this))
 
   (use-package undo-tree
-    :ensure (:package "undo-tree"
-  					:source "GNU-devel ELPA"
-  					:protocol https
-  					:inherit t
-  					:depth 1
-  					:repo "https://gitlab.com/tsc25/undo-tree"
-  					:local-repo "undo-tree"
-  					:files ("*" (:exclude ".git")))
+    :ensure t
     :custom
     (undo-tree-auto-save-history t)
     (undo-tree-history-directory-alist '((".*" . "/home/hamza/.emacs.d/undo")))
@@ -501,17 +392,7 @@
     (global-undo-tree-mode))
 
   (use-package ligature
-    :ensure (:package "ligature"
-  					:source nil
-  					:protocol https
-  					:inherit t
-  					:depth 1
-  					:fetcher github
-  					:repo "mickeynp/ligature.el"
-  					:files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-  							"doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-  							(:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
-  									  "*-tests.el" "LICENSE" "README*" "*-pkg.el")))
+    :ensure t
     :config
     ;; Enable the "www" ligature in every possible major mode
     (ligature-set-ligatures 't '("www"))
@@ -520,93 +401,45 @@
     (ligature-set-ligatures 'eww-mode '("ff" "fi" "ffi"))
     ;; Enable all Cascadia Code ligatures in programming modes
     (ligature-set-ligatures 'prog-mode '("-<<" "-<" "-<-" "<--" "<---" "<<-" "<-" "->" "->>" "-->" "--->" "->-" ">-" ">>-"
-  									   "=<<" "=<" "=<=" "<==" "<===" "<<=" "<=" "=>" "=>>" "==>" "===>" "=>=" ">=" ">>="
-  									   "<->" "<-->" "<--->" "<---->" "<=>" "<==>" "<===>" "<====>" "::" ":::" "__"
-  									   "<~~" "</" "</>" "/>" "~~>" "==" "!=" "/=" "~=" "<>" "===" "!==" "!===" "=/=" "=!="
-  									   "<:" ":=" "*=" "*+" "<*" "<*>" "*>" "<|" "<|>" "|>" "<." "<.>" ".>" "+*" "=*" "=:" ":>"
-  									   "(*" "*)" "/*" "*/" "[|" "|]" "{|" "|}" "++" "+++" "\\/" "/\\" "|-" "-|" "<!--" "<!---"))
+    				       "=<<" "=<" "=<=" "<==" "<===" "<<=" "<=" "=>" "=>>" "==>" "===>" "=>=" ">=" ">>="
+    				       "<->" "<-->" "<--->" "<---->" "<=>" "<==>" "<===>" "<====>" "::" ":::" "__"
+    				       "<~~" "</" "</>" "/>" "~~>" "==" "!=" "/=" "~=" "<>" "===" "!==" "!===" "=/=" "=!="
+    				       "<:" ":=" "*=" "*+" "<*" "<*>" "*>" "<|" "<|>" "|>" "<." "<.>" ".>" "+*" "=*" "=:" ":>"
+    				       "(*" "*)" "/*" "*/" "[|" "|]" "{|" "|}" "++" "+++" "\\/" "/\\" "|-" "-|" "<!--" "<!---"))
     ;; Enables ligature checks globally in all buffers.  You can also do it
     ;; per mode with `ligature-mode'.
     (global-ligature-mode))
 
   (use-package all-the-icons
     :if (display-graphic-p)
-    :ensure (:package "all-the-icons"
-  					:source "MELPA"
-  					:protocol https
-  					:inherit t
-  					:depth 1
-  					:repo "domtronn/all-the-icons.el"
-  					:fetcher github
-  					:files (:defaults "data")))
+    :ensure t)
 
   (use-package kind-icon
-    :ensure (:package "kind-icon"
-  					:source nil
-  					:protocol https
-  					:inherit t
-  					:depth 1
-  					:repo "https://github.com/jdtsmith/kind-icon"
-  					:local-repo "kind-icon"
-  					:files ("*" (:exclude ".git")))
+    :ensure t
     :after corfu
     :config
     (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
   (use-package all-the-icons-dired
-    :ensure (:package "all-the-icons-dired"
-  					:source nil
-  					:protocol https
-  					:inherit t
-  					:depth 1
-  					:repo "wyuenho/all-the-icons-dired"
-  					:fetcher github
-  					:files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-  							"doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-  							(:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
-  									  "LICENSE" "README*" "*-pkg.el")))
+    :ensure t
     :config
     (add-hook 'dired-mode-hook #'all-the-icons-dired-mode))
 
   (elpaca-process-queues)
 
   (use-package yasnippet
-    :ensure (:package "yasnippet"
-  					:source nil
-  					:protocol https
-  					:inherit t
-  					:depth 1
-  					:repo "joaotavora/yasnippet"
-  					:fetcher github
-  					:files ("yasnippet.el" "snippets")))
+    :ensure t)
 
   (use-package yasnippet-snippets
-    :ensure (:package "yasnippet-snippets"
-  					:source nil
-  					:protocol https
-  					:inherit t
-  					:depth 1
-  					:repo "AndreaCrotti/yasnippet-snippets"
-  					:fetcher github
-  					:files ("*.el" "snippets" ".nosearch"))
+    :ensure t
     :config
     (setq yas-snippet-dirs
-  		`("/home/hamza/.emacs.d/snippets" ;; Personal Snippets
-  		  ,yasnippet-snippets-dir))
+    	`("/home/hamza/.emacs.d/snippets" ;; Personal Snippets
+    	  ,yasnippet-snippets-dir))
     (yas-global-mode 1))
 
   (use-package magit
-    :ensure (:package "magit"
-  					:source nil
-  					:protocol https
-  					:inherit t
-  					:depth 1
-  					:fetcher github
-  					:repo "magit/magit"
-  					:files ("lisp/magit*.el" "lisp/git-rebase.el" "docs/magit.texi" "docs/AUTHORS.md" "LICENSE"
-  							"Documentation/magit.texi" "Documentation/AUTHORS.md"
-  							(:exclude "lisp/magit-libgit.el" "lisp/magit-libgit-pkg.el"
-  									  "lisp/magit-section.el" "lisp/magit-section-pkg.el"))))
+    :ensure t)
 #+end_src
 
 * Programming
@@ -615,101 +448,36 @@
 
   (use-package typescript-mode
     :defer t
-    :ensure (:package "typescript-mode"
-                      :source "MELPA"
-                      :protocol https
-                      :inherit t
-                      :depth 1
-                      :fetcher github
-                      :repo "emacs-typescript/typescript.el"
-                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo"
-                              "lisp/*.el" (:exclude ".dir-locals.el"
-                                                    "test.el" "tests.el" "*-test.el" "*-tests.el"
-                                                    "LICENSE" "README*" "*-pkg.el")))
+    :ensure t
     :config
     (setq typescript-indent-level 4))
 
   (use-package tide
     :defer t
-    :ensure (:package "tide"
-                      :source nil
-                      :protocol https
-                      :inherit t
-                      :depth 1
-                      :fetcher github
-                      :repo "ananthakumaran/tide"
-                      :files (:defaults "tsserver"))
+    :ensure t
     :config
     (setq typescript-indent-level 4))
 
   (use-package svelte-mode
     :defer t
-    :ensure (:package "svelte-mode"
-                      :source "MELPA"
-                      :protocol https
-                      :inherit t
-                      :depth 1
-                      :fetcher github
-                      :repo "leafOfTree/svelte-mode"
-                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
-                                        "*-tests.el" "LICENSE" "README*" "*-pkg.el"))))
+    :ensure t)
 
   (use-package rainbow-delimiters
-    :ensure (:package "rainbow-delimiters"
-                      :source "MELPA"
-                      :protocol https
-                      :inherit t
-                      :depth 1
-                      :fetcher github
-                      :repo "Fanael/rainbow-delimiters"
-                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
-                                        "LICENSE" "README*" "*-pkg.el")))
+    :ensure t
     :config
     (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
 
   (use-package pyvenv
     :defer t
-    :ensure (:package "pyvenv"
-                      :source "MELPA"
-                      :protocol https
-                      :inherit t
-                      :depth 1
-                      :fetcher github
-                      :repo "jorgenschaefer/pyvenv"
-                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
-                                        "LICENSE" "README*" "*-pkg.el"))))
+    :ensure t)
 
   (use-package lsp-dart
     :defer t
-    :ensure (:package "lsp-dart"
-                      :source "MELPA"
-                      :protocol https
-                      :inherit t
-                      :depth 1
-                      :repo "emacs-lsp/lsp-dart"
-                      :fetcher github
-                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
-                                        "*-tests.el" "LICENSE" "README*" "*-pkg.el"))))
+    :ensure t)
 
   (use-package flutter
     :defer t
-    :ensure (:package "flutter"
-                      :source "MELPA"
-                      :protocol https
-                      :inherit t
-                      :depth 1
-                      :repo "amake/flutter.el"
-                      :fetcher github
-                      :files ("flutter.el" "flutter-project.el" "flutter-l10n.el")))
+    :ensure t)
 #+end_src
 
 * Language Learning
@@ -717,42 +485,11 @@
 #+begin_src emacs-lisp
   (use-package kanji-mode
     :defer t
-    :ensure (:package "kanji-mode"
-                      :source nil
-                      :protocol https
-                      :inherit t
-                      :depth 1
-                      :fetcher github
-                      :repo "wsgac/kanji-mode"
-                      :files (:defaults "kanji")))
-
-  ;; (use-package org-anki
-  ;;   :defer t
-  ;;   :ensure (:package "org-anki"
-  ;;                     :source nil
-  ;;                     :protocol https
-  ;;                     :inherit t
-  ;;                     :depth 1
-  ;;                     :fetcher github
-  ;;                     :repo "eyeinsky/org-anki"
-  ;;                     :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-  ;;                             "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-  ;;                             (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
-  ;;                                       "*-tests.el" "LICENSE" "README*" "*-pkg.el"))))
+    :ensure t)
 
   (use-package anki-editor
     :defer t
-    :ensure (:package "anki-editor"
-                      :source nil
-                      :protocol https
-                      :inherit t
-                      :depth 1
-                      :fetcher github
-                      :repo "anki-editor/anki-editor"
-                      :files ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-                              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
-                                        "*-tests.el" "LICENSE" "README*" "*-pkg.el"))))
+    :ensure t)
 #+end_src
 
 * Custom

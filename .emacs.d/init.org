@@ -484,12 +484,15 @@
 ** Japanese
 #+begin_src emacs-lisp
   (use-package kanji-mode
-    :defer t
     :ensure t)
 
   (use-package anki-editor
-    :defer t
     :ensure t)
+
+  (use-package clipmon
+    :ensure t
+    :config
+    (setq clipmon-interval 0.1))
 #+end_src
 
 * Custom

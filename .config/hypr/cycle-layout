@@ -1,0 +1,45 @@
+#!/bin/env bash
+
+file=$HOME/.config/hypr/current-variant
+variant=$(cat $file)
+list=("qwerty" "dvorak") # , = qwerty
+# layout=$(hyprctl getoption input:kb_layout | head -n1 | cut -d' ' -f2)
+# all_valid_variants=$(awk '/! variant/,/! option/' /usr/share/X11/xkb/rules/base.lst | grep $layout: | cut -d' ' -f3)
+found=false
+
+if [ $# -gt 0 ]; then
+	# hyprctl handles errors for us
+    echo "Setting variant from '$variant' to '$1'."
+	[ "$1" = "qwerty" ] \
+		&& hyprctl keyword input:kb_variant , \
+		||  hyprctl keyword input:kb_variant "$1"
+	echo "$1" > "$file"
+	exit
+fi 
+
+for ((i = 0; i < ${#list[@]}; i++)); do
+	kbv="${list[i]}" # kbv = KeyBoard Variant
+	if [ "$kbv" = "$variant" ]; then
+		found=true
+
+		# check if last element and set target keyboard variant accordingly
+		[ $i -eq $((${#list[@]} - 1)) ] && target="${list[0]}" || target="${list[i + 1]}"
+
+		echo "Found '$variant' in (${list[@]}). Setting variant from '$variant' to '$target'."
+
+		[ "$target" = "qwerty" ] \
+			&& hyprctl keyword input:kb_variant , \
+			||  hyprctl keyword input:kb_variant "$target"
+
+		echo "$target" > "$file"
+		exit 0
+	fi
+done
+
+if [ "$found" = false ]; then
+	echo "[ERROR] Could not find '$variant' listed in '$file' in (${list[@]}). Did someone tamper with the file?"
+	echo "[ERROR] Defaulting to QWERTY"
+	echo "qwerty" > "$file"
+	hyprctl keyword input:kb_variant ,
+	exit 1
+fi 

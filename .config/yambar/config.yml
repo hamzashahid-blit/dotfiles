@@ -1,0 +1,274 @@
+awesome: &awesome Font Awesome 6 Free:style=solid:pixelsize=14
+iosevka: &iosevka Iosevka Custom:pixelsize=14
+
+bar:
+   font: *iosevka
+   location: top
+   height: 26
+   foreground: ebdbb2ff
+   background: 282828b2
+   margin: 5 
+
+   border:
+     color: 504945ff
+     bottom-width: 0
+
+   left:
+    - script:
+        path: /usr/local/bin/yambar-hyprland-wses
+        anchors:
+          ws_focused: &ws_focused d79921ff
+          ws_active: &ws_active edbbb2ff
+          ws_empty: &ws_empty 7c6f64ff
+          ws_other: &ws_other bbbbbbff
+          # you can use `{workspace_N}` here to use the workspace name
+          # assigned by Hyprland instead of hard-coding one here. That
+          # name is, as far as I can tell, always just the index of the
+          # workspace though, so not all that valuable.
+          ws_1: &ws_1 "I"
+          ws_2: &ws_2 "II"
+          ws_3: &ws_3 "III"
+          ws_4: &ws_4 "IV"
+          ws_5: &ws_5 "V"
+          ws_6: &ws_6 "VI"
+          ws_7: &ws_7 "VII"
+          ws_8: &ws_8 "VIII"
+          ws_9: &ws_9 "IX"
+        content:
+          list:
+            spacing: 6
+            items:
+              - map:
+                  default:
+                    string: { text: *ws_1, foreground: *ws_other }
+                  conditions:
+                    workspace_count < 2:
+                      # if you replace all of these empty: entries with
+                      #
+                      #   string: { text: *ws_N, foreground: *ws_empty }
+                      #
+                      # instead, then you'll always see the full
+                      # workspace list. however, you'll be unable to use
+                      # `{workspace_N}` as the workspace names in the
+                      # anchors list above.
+                      empty: {}
+                    workspace_1_focused:
+                      string: { text: *ws_1, foreground: *ws_focused }
+                    workspace_1_active:
+                      string: { text: *ws_1, foreground: *ws_active }
+                    workspace_1_windows == 0:
+                      string: { text: *ws_1, foreground: *ws_empty }
+              # All of the maps below are identical to the one above,
+              # except with N++.
+              - map:
+                  default:
+                    string: { text: *ws_2, foreground: *ws_other }
+                  conditions:
+                    workspace_count < 3:
+                      empty: {}
+                    workspace_2_focused:
+                      string: { text: *ws_2, foreground: *ws_focused }
+                    workspace_2_active:
+                      string: { text: *ws_2, foreground: *ws_active }
+                    workspace_2_windows == 0:
+                      string: { text: *ws_2, foreground: *ws_empty }
+              - map:
+                  default:
+                    string: { text: *ws_3, foreground: *ws_other }
+                  conditions:
+                    workspace_count < 4:
+                      empty: {}
+                    workspace_3_focused:
+                      string: { text: *ws_3, foreground: *ws_focused }
+                    workspace_3_active:
+                      string: { text: *ws_3, foreground: *ws_active }
+                    workspace_3_windows == 0:
+                      string: { text: *ws_3, foreground: *ws_empty }
+              - map:
+                  default:
+                    string: { text: *ws_4, foreground: *ws_other }
+                  conditions:
+                    workspace_count < 5:
+                      empty: {}
+                    workspace_4_focused:
+                      string: { text: *ws_4, foreground: *ws_focused }
+                    workspace_4_active:
+                      string: { text: *ws_4, foreground: *ws_active }
+                    workspace_4_windows == 0:
+                      string: { text: *ws_4, foreground: *ws_empty }
+              - map:
+                  default:
+                    string: { text: *ws_5, foreground: *ws_other }
+                  conditions:
+                    workspace_count < 6:
+                      empty: {}
+                    workspace_5_focused:
+                      string: { text: *ws_5, foreground: *ws_focused }
+                    workspace_5_active:
+                      string: { text: *ws_5, foreground: *ws_active }
+                    workspace_5_windows == 0:
+                      string: { text: *ws_5, foreground: *ws_empty }
+              - map:
+                  default:
+                    string: { text: *ws_6, foreground: *ws_other }
+                  conditions:
+                    workspace_count < 7:
+                      empty: {}
+                    workspace_6_focused:
+                      string: { text: *ws_6, foreground: *ws_focused }
+                    workspace_6_active:
+                      string: { text: *ws_6, foreground: *ws_active }
+                    workspace_6_windows == 0:
+                      string: { text: *ws_6, foreground: *ws_empty }
+              - map:
+                  default:
+                    string: { text: *ws_7, foreground: *ws_other }
+                  conditions:
+                    workspace_count < 8:
+                      empty: {}
+                    workspace_7_focused:
+                      string: { text: *ws_7, foreground: *ws_focused }
+                    workspace_7_active:
+                      string: { text: *ws_7, foreground: *ws_active }
+                    workspace_7_windows == 0:
+                      string: { text: *ws_7, foreground: *ws_empty }
+              - map:
+                  default:
+                    string: { text: *ws_8, foreground: *ws_other }
+                  conditions:
+                    workspace_count < 9:
+                      empty: {}
+                    workspace_8_focused:
+                      string: { text: *ws_8, foreground: *ws_focused }
+                    workspace_8_active:
+                      string: { text: *ws_8, foreground: *ws_active }
+                    workspace_8_windows == 0:
+                      string: { text: *ws_8, foreground: *ws_empty }
+              - map:
+                  default:
+                    string: { text: *ws_9, foreground: *ws_other }
+                  conditions:
+                    workspace_count < 10:
+                      empty: {}
+                    workspace_9_focused:
+                      string: { text: *ws_9, foreground: *ws_focused }
+                    workspace_9_active:
+                      string: { text: *ws_9, foreground: *ws_active }
+                    workspace_9_windows == 0:
+                      string: { text: *ws_9, foreground: *ws_empty }
+
+   right:
+     - mem:
+         content:
+           - string: 
+               text: ""
+               font: *awesome
+               foreground: b16286ff
+               right-margin: 6
+           - string:
+               text: "{percent_used}% ({used:mb}MB)"
+               foreground: b16286ff
+           - string: { text: " | " }
+     - cpu:
+         content:
+           map:
+             conditions:
+               id < 0:
+                 - string: 
+                     text: ""
+                     font: *awesome
+                     foreground: 83a598ff
+                     right-margin: 6
+                 - string:
+                     foreground: 83a598ff
+                     text: "{cpu}%"
+                 - string: { text: " | " }
+     - network:
+         poll-interval: 500
+         content:
+           map:
+             conditions:
+                 name == enp8s0:
+                   map:
+                     default: 
+                       - string:
+                           text: "󰖪"
+                           font: *iosevka
+                       - string:
+                           text: " | "
+                     conditions:
+                       state == up:
+                         - string:
+                             text: "󰖩 "
+                             font: *iosevka
+                             foreground: b8bb26ff
+                         - string:
+                             text: "{dl-speed:mb:.1}d/{ul-speed:mb:.1}u"
+                             foreground: b8bb26ff
+                         - string:
+                             text: " | "
+     - clock:
+         date-format: "%b %d, %a (%Y)"
+         time-format: "%I:%M %p :%S"
+         content:
+           - string: 
+               text: ""
+               font: *awesome
+               foreground: fe8019ff
+               right-margin: 6
+           - string: 
+               text: "{date}"
+               foreground: fe8019ff
+           - string: { text: " | " }
+           - string: 
+               text: ""
+               font: *awesome
+               foreground: fe8019ff
+               right-margin: 6
+           - string: 
+               text: "{time}"
+               foreground: fe8019ff
+
+
+         # anchors:
+         #   - base: &river_base
+         #       margin: 6
+         #       conditions:
+         #         id == 1: {string: {text: 󰀚 }}  
+         #         id == 2: {string: {text: 󰎧 }}  
+         #         id == 3: {string: {text: 󰎪 }}  
+         #         id == 4: {string: {text: 󰎭 }}  
+         #         id == 5: {string: {text: 󰎱 }}  
+         #         id == 6: {string: {text: 󰎳 }}  
+         #         id == 7: {string: {text: 󰎶 }}  
+         #         id == 8: {string: {text: 󰎹 }}  
+         #         id == 9: {string: {text: 󰎼 }}  
+         #         id == 10: {string: {text: 󰽽}}  
+         #   content:
+         #     # map:
+         #     #   on-click:
+         #     #     left: sh -c "riverctl set-focused-tags $((1 << ({id} - 1)))"
+         #     #     right: sh -c "riverctl toggle-focused-tags $((1 << ({id} -1)))"
+         #     #     middle: sh -c "riverctl toggle-view-tags $((1 << ({id} -1)))"
+         #     conditions:
+         #       state == urgent:
+         #         map:
+         #           <<: *river_base
+         #           deco: {background: {color: D08770ff}}
+         #      state == focused:
+         #        map:
+         #          <<: *river_base
+         #          foreground: ffffffff
+         #      state == visible:
+         #        map:
+         #          conditions:
+         #            ~occupied: {map: {<<: *river_base}}
+         #            occupied: {map: {<<: *river_base}}
+         #      state == unfocused:
+         #        map:
+         #          <<: *river_base
+         #      state == invisible:
+         #        map:
+         #          conditions:
+         #            ~occupied: {empty: {}}
+         #            occupied: {map: {<<: *river_base}}

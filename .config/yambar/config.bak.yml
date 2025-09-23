@@ -1,0 +1,46 @@
+awesome: &awesome Font Awesome 6 Free:style=solid:pixelsize=14
+awesome_brands: &awesome_brands Font Awesome 6 Brands:pixelsize=16
+std_underline: &std_underline {underline: { size: 2, color: ff0000ff}}
+
+bar:
+  height: 30
+  location: top
+  background: 1d2021b2
+  
+  right:
+    - network:
+        content:
+          map:
+            default: {empty: {}}
+            conditions:
+              name == enp8s0:
+                map:
+                  conditions:
+                    ~carrier: {empty: {}}
+                    carrier:
+                      map:
+                        default: {string: {text: , font: *awesome, foreground: ffffff66}}
+                        conditions:
+                          state == up && ipv4 != "": {string: {text: , font: *awesome}}
+    - network:
+        poll-interval: 1000
+        content:
+          map:
+            default: {empty: {}}
+            conditions:
+              name == enp8s0:
+                map:
+                  default: {string: {text: , font: *awesome, foreground: ffffff66}}
+                  conditions:
+                    state == down: {string: {text: , font: *awesome, foreground: ff0000ff}}
+                    state == up:
+                      map:
+                        default:
+                          - string: {text: , font: *awesome}
+                          - string: {text: "{ssid} {dl-speed:mb}/{ul-speed:mb} Mb/s"}
+
+                        conditions:
+                          ipv4 == "":
+                            - string: {text: , font: *awesome, foreground: ffffff66}
+                            - string: {text: "{ssid} {dl-speed:mb}/{ul-speed:mb} Mb/s", foreground: ffffff66}
+              

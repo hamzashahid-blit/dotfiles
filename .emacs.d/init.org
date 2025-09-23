@@ -1,0 +1,744 @@
+# -*- after-save-hook: (org-babel-tangle); before-save-hook: (delete-trailing-whitespace)-*-
+#+Title: Groovemacs Org Config File
+#+Author: Hamza Shahid
+#+Startup: overview
+#+Property: header-args:emacs-lisp :exports code :results none :tangle init.el
+
+* UI Tweaks
+#+begin_src emacs-lisp
+  (setq-default
+   inhibit-startup-message t    ; Will not show up Emacs logo and splash on screen
+   visible-bell t               ; Will flash the screen on error/invalid operation
+   fill-column 100              ; toggle wrapping text at the 80th character
+   tab-width 4                  ; Set width for tabs
+   delete-by-moving-to-trash t  ; Delete files to trash
+   backup-directory-alist '(("." . "~/.emacs.d/saves")) ;; Save tmp file saves to ~/.saves
+   create-lockfiles nil         ; They are good but mess up code files... and I'm a programmer
+   history-length 1000
+   initial-scratch-message ";;「グルーフマクス」へようこそ => Welcome to 'Groovemacs'\n\n")
+
+  ;; Minimal UI
+  (menu-bar-mode -1)
+  (tool-bar-mode -1)
+  (scroll-bar-mode -1)
+  (fset 'yes-or-no-p 'y-or-n-p)
+  (global-subword-mode 1) ; Iterate through CamelCase words
+  (delete-selection-mode 1) ; Replace selected with paste/type&
+  (setf frame-resize-pixelwise t) ;  Remove annoying border in StumpWM & KDE
+
+  ;; Garbage-collect on focus-out, Emacs should feel snappier overall.
+  ;; but messes with (use-package smooth-scrolling)
+  (add-function :after after-focus-change-function
+  				  (defun me/garbage-collect-maybe ()
+  					(unless (frame-focus-state)
+  					  (garbage-collect))))
+
+  ;; Transparent terminal emacs
+  (defun set-background-for-terminal (&optional frame)
+    (or frame (setq frame (selected-frame)))
+    "unsets the background color in terminal mode"
+    (unless (display-graphic-p frame)
+      (set-face-background 'default "unspecified-bg" frame)))
+  (add-hook 'after-make-frame-functions 'set-background-for-terminal)
+  (add-hook 'window-setup-hook 'set-background-for-terminal)
+
+  (defvar hamza/font "Iosevka Custom 12"
+    "Main font")
+  (defvar hamza/font-jp "Noto Sans Mono CJK JP 12"
+    "Japanese font")
+  (defvar hamza/font-sc "Noto Sans Mono CJK SC 12"
+    "Chinese font")
+
+  (defun hamza/use-font (&optional frame)
+    (when frame
+      (select-frame frame))
+    (set-face-attribute 'default nil :font hamza/font)
+    ;(set-fontset-font t 'chinese-gbk (font-spec :family hamza/font-sc))
+    (dolist (charset '(kana han symbol cjk-misc bopomofo japanese-jisx0213.2004-1)) ; JP is later to override
+      (set-fontset-font t charset (font-spec :family hamza/font-jp))))
+
+  (add-hook 'after-make-frame-functions #'hamza/use-font)
+  (add-to-list 'default-frame-alist '(alpha-background . 70))
+
+  (savehist-mode t)
+
+  ;; Don't ask for confirmation when opening this config file
+  (add-to-list 'safe-local-variable-values '(before-save-hook . (delete-trailing-whitespace)))
+  (add-to-list 'safe-local-variable-values '(after-save-hook . (org-babel-tangle)))
+
+  ;; Auto zoom
+  (defun auto-zoom-inc ()
+    (when (not (active-minibuffer-window))
+  	(text-scale-increase 1.5)))
+  (defun auto-zoom-dec ()
+    (when (not (active-minibuffer-window))
+  	(text-scale-decrease 1.5)))
+  (add-hook 'after-change-major-mode-hook 'auto-zoom-inc)
+  ;; Undo zoom
+  (add-hook 'help-mode-hook 'auto-zoom-dec)
+  (add-hook 'org-agenda-mode-hook 'auto-zoom-dec)
+
+  (column-number-mode t) ; display character index at point
+  (global-display-line-numbers-mode t)
+  (setq display-line-numbers-type 'relative)
+  (dolist (mode '(org-mode-hook
+                  org-agenda-mode-hook
+  				term-mode-hook
+  				shell-mode-hook
+  				eshell-mode-hook
+  				vterm-mode-hook
+  				eat-mode))
+    (add-hook mode (lambda () (display-line-numbers-mode 0))))
+#+end_src
+
+* Package Init
+#+begin_src emacs-lisp
+  (setq package-enable-at-startup nil)
+
+  (defvar elpaca-installer-version 0.11)
+  (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+  (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+  (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+  (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                                :ref nil :depth 1 :inherit ignore
+                                :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                                :build (:not elpaca--activate-package)))
+  (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+         (build (expand-file-name "elpaca/" elpaca-builds-directory))
+         (order (cdr elpaca-order))
+         (default-directory repo))
+    (add-to-list 'load-path (if (file-exists-p build) build repo))
+    (unless (file-exists-p repo)
+      (make-directory repo t)
+      (when (<= emacs-major-version 28) (require 'subr-x))
+      (condition-case-unless-debug err
+          (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                    ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+                                                    ,@(when-let* ((depth (plist-get order :depth)))
+                                                        (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                    ,(plist-get order :repo) ,repo))))
+                    ((zerop (call-process "git" nil buffer t "checkout"
+                                          (or (plist-get order :ref) "--"))))
+                    (emacs (concat invocation-directory invocation-name))
+                    ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                          "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                    ((require 'elpaca))
+                    ((elpaca-generate-autoloads "elpaca" repo)))
+              (progn (message "%s" (buffer-string)) (kill-buffer buffer))
+            (error "%s" (with-current-buffer buffer (buffer-string))))
+        ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+    (unless (require 'elpaca-autoloads nil t)
+      (require 'elpaca)
+      (elpaca-generate-autoloads "elpaca" repo)
+      (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
+  (add-hook 'after-init-hook #'elpaca-process-queues)
+  (elpaca `(,@elpaca-order))
+
+  ;; Install use-package support
+  (elpaca elpaca-use-package
+    ;; Enable use-package :ensure support for Elpaca.
+    (elpaca-use-package-mode))
+#+end_src
+
+* Functional Tweaks
+#+begin_src emacs-lisp
+  (setq async-shell-command-buffer "confirm-kill-process")
+
+  ;; Better support for clipboard and primary selection???
+  ;; (setq x-select-request-type
+  ;;       '(UTF8_STRING COMPOUND_TEXT STRING text/plain\;charset=utf-8))
+
+  (when (getenv "WAYLAND_DISPLAY")
+    (setq wl-copy-process nil)
+    (defun wl-copy (text)
+      (setq wl-copy-process (make-process :name "wl-copy"
+                                          :buffer nil
+                                          :command '("wl-copy" "-f" "-n")
+                                          :connection-type 'pipe
+                                          :noquery t))
+      (process-send-string wl-copy-process text)
+      (process-send-eof wl-copy-process))
+    (defun wl-paste ()
+      (if (and wl-copy-process (process-live-p wl-copy-process))
+          nil                             ; should return nil if we're the current paste owner
+        (shell-command-to-string "wl-paste -n | tr -d \r")))
+    (setq interprogram-cut-function 'wl-copy)
+    (setq interprogram-paste-function 'wl-paste))
+#+end_src
+
+* Basic Packages
+#+begin_src emacs-lisp
+  (put 'dired-find-alternate-file 'disabled nil)
+
+  (use-package doom-themes
+    :ensure t
+    :config
+    (setq doom-gruvbox-dark-variant "hard")
+    (load-theme 'doom-gruvbox t))
+
+  (use-package org
+    :ensure t
+    :config
+    (setq org-ellipsis "…"
+    	org-src-window-setup 'current-window
+    	org-startup-with-inline-images t
+    	org-startup-with-latex-preview nil
+    	org-image-actual-width nil
+          org-log-into-drawer t)
+    (set-face-attribute 'org-ellipsis nil :inherit 'default :box nil)
+    (add-hook 'org-mode-hook #'org-indent-mode)
+    ;; Open links in org with C-c C-o
+    (with-eval-after-load 'org-ctags (setq org-open-link-functions nil))
+    (org-babel-do-load-languages
+     'org-babel-load-languages '((C . t)
+    			       (latex . t))))
+
+  (use-package org-modern
+    :ensure t
+    :config
+    (setq org-modern-hide-stars 'leading
+          org-auto-align-tags nil
+    	org-tags-column 0
+    	org-catch-invisible-edits 'show-and-error
+    	org-special-ctrl-a/e t
+    	org-insert-heading-respect-content t
+    	org-hide-emphasis-markers t
+    	org-pretty-entities t
+    	org-modern-star 'replace)
+    (global-org-modern-mode))
+
+  (use-package org-super-agenda
+    :ensure t
+    :config
+    (setq org-agenda-files '("~/shr/org/todo.org")
+          org-agenda-span 1
+          org-agenda-start-day "+0d"
+          org-agenda-skip-timestamp-if-done t
+          org-agenda-skip-deadline-if-done t
+          org-agenda-skip-scheduled-if-done t
+          org-agenda-skip-scheduled-if-deadline-is-shown t
+          org-agenda-skip-timestamp-if-deadline-is-shown t
+          org-agenda-current-time-string "← now ────────────────────"
+          org-agenda-time-grid '((daily) () "" "")
+          org-agenda-timegrid-use-ampm t
+          org-agenda-prefix-format '((agenda . "  %?-2i %t ")
+                                     (todo . "  %-2i")
+                                     (tags . "  %-2i")
+                                     (search . "  %-2i"))
+          org-agenda-hide-tags-regexp ".*"
+          org-agenda-category-icon-alist
+          `(("Errands" ("💪") nil nil :ascent center)
+            ("Career" ("🎯") nil nil :ascent center)
+            ("Japanese" ("🎌") nil nil :ascent center)
+            ("Study" ("📚") nil nil :ascent center)
+            ("Life" ("🐳") nil nil :ascent center)
+            ("Contemplation" ("💫") nil nil :ascent center)
+            ("Wishlist" ("🤲") nil nil :ascent center)
+            ("Goals" ("🏆") nil nil :ascent center)))
+    ;; (set-face-attribute 'org-agenda-date nil :inherit 'outline-1 :height 1.15)
+    ;; (set-face-attribute 'org-agenda-date-today :inherit 'outline-1 :height 1.15)
+    ;; (set-face-attribute 'org-agenda-date-weekend :inherit 'outline-1 :height 1.15)
+    ;; (set-face-attribute 'org-agenda-date-weekend-today :inherit 'outline-1 :height 1.15)
+    (set-face-attribute 'org-super-agenda-header nil
+                        :weight 'bold
+                        :height 1.05
+  					; :style diary-button wasn't working in :box
+                        :box '(:line-width 2 :style released-button))
+    (org-super-agenda-mode))
+
+  (setq org-super-agenda-groups
+        '((:name "Overdue ❗ "
+                 :order 2
+                 :scheduled past
+                 :face 'error)
+          (:name "Errands 💪 "
+                 :order 3
+                 :tag "errand")
+          (:name "Career 🎯 "
+                 :order 4
+                 :tag "career")
+          (:name "Study 📚 "
+                 :order 5
+                 :tag "study")
+          (:name "Life 🐳 "
+                 :order 6
+                 :tag "life")
+          (:name "Contemplation 💫 "
+                 :order 7
+                 :tag "thought")
+          (:name "Wishlist 🤲 "
+                 :order 8
+                 :tag "wish")
+          (:name "Goals 🏆 "
+                 :order 9
+                 :tag "goal")
+          (:name "Today 🗓️ "
+                 :order 1
+                 :time-grid t
+                 :date today
+                 :scheduled today
+                 :face 'warning)))
+
+  (use-package org-download
+    :ensure t
+    :custom
+    (org-download-heading-lvl nil)
+    (org-download-edit-cmd "krita %s")
+    (org-download-image-org-width 350)
+    (org-download-screenshot-method "grim -g \"$(slurp)\" %s"))
+
+  (use-package olivetti
+    :ensure t
+    :config
+    (add-hook 'org-mode-hook #'olivetti-mode)
+    (add-hook 'org-agenda-mode-hook #'olivetti-mode))
+
+  (use-package paredit
+    :ensure t
+    :config
+    (autoload 'enable-paredit-mode "paredit"
+      "Turn on pseudo-structural editing of Lisp code."
+      t)
+    (add-hook 'emacs-lisp-mode-hook       'enable-paredit-mode)
+    (add-hook 'lisp-mode-hook             'enable-paredit-mode)
+    (add-hook 'lisp-interaction-mode-hook 'enable-paredit-mode)
+    (add-hook 'scheme-mode-hook           'enable-paredit-mode))
+
+  (use-package lambda-line
+    :ensure (:host github :repo "lambda-emacs/lambda-line") ; custom cz default recipe doesn't work!
+    :custom
+    ;; (Lambda-line-icon-time t) ; requires ClockFace font (see below)
+    ;; (lambda-line-clockface-update-fontset "ClockFaceRectSolid") ; set clock icon
+    (lambda-line-abbrev t) ; abbreviate major modes
+    (lambda-line-hspace "  ")  ; add some cushion
+    (lambda-line-prefix t) ; use a prefix symbol
+    (lambda-line-prefix-padding nil) ; no extra space for prefix
+    (lambda-line-status-invert nil)  ; no invert colors
+    (lambda-line-gui-ro-symbol  " ⨂") ; symbols
+    (lambda-line-gui-mod-symbol " ⬤")
+    (lambda-line-gui-rw-symbol  " ◯")
+    (lambda-line-vc-symbol "  ")
+    (lambda-line-space-top +.25)  ; padding on top and bottom of line
+    (lambda-line-space-bottom -.25)
+    (lambda-line-symbol-position 0.05) ; adjust the vertical placement of symbol
+    :config
+    (set-face-attribute 'lambda-line-active-status-MD nil :foreground (doom-color 'red))
+    (set-face-attribute 'lambda-line-active-status-RO nil :foreground (doom-color 'yellow))
+    (set-face-attribute 'lambda-line-active-status-RW nil :foreground (doom-color 'green))
+    (set-face-attribute 'lambda-line-visual-bell nil :background (doom-color 'grey))
+    (setq lambda-line-position 'bottom) ; Set position of status-line
+    ;; set divider line in footer
+    (when (eq lambda-line-position 'top)
+      (setq-default mode-line-format (list "%_"))
+      (setq mode-line-format (list "%_")))
+    (lambda-line-mode)) ; activate lambda-line
+
+  (use-package vertico
+    :defer t
+    :ensure t
+    :init
+    (vertico-mode)
+    :config
+    (setq vertico-cycle t))
+
+  (use-package orderless
+    :ensure t
+    :custom
+    (completion-styles '(orderless basic)))
+
+  (use-package which-key
+    :defer t
+    :ensure t
+    :config
+    (setq which-key-idle-delay 0.3)
+    (which-key-mode))
+
+  (use-package corfu
+    :ensure t
+    ;; Optional customizations
+    :custom
+    (corfu-cycle t)                 ;; Enable cycling for `corfu-next/previous'
+    (corfu-auto t)                  ;; Enable auto completion
+    ;; (corfu-commit-predicate t)      ;; Do not commit selected candidates on next input
+    (corfu-quit-at-boundary t)      ;; Automatically quit at word boundary
+    ;; (corfu-quit-no-match t)         ;; Automatically quit if there is no match
+    (corfu-echo-documentation 0)    ;; if NIL, do not show documentation in the echo area
+    (corfu-auto-prefix 3)           ;; Run Corfu after 'arg' characters are entered
+    (corfu-auto-delay 0)            ;; No delay before trying to auto-complete
+    (lsp-completion-provider :none) ;; Use corfu instead for lsp completions
+    (tab-always-indent 'complete)   ;; Enable indentation+completion using the TAB
+    :config
+    (add-hook 'prog-mode-hook #'corfu-mode))
+
+  (use-package marginalia
+    :ensure t
+    :config
+    (marginalia-mode))
+
+  (use-package multiple-cursors
+    :ensure t
+    :config
+    (global-set-key (kbd "C-c C-<return>") 'mc/edit-lines)
+    (global-set-key (kbd "C->") 'mc/mark-next-like-this)
+    (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
+    (global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this))
+
+  (use-package undo-tree
+    :ensure t
+    :custom
+    (undo-tree-auto-save-history t)
+    (undo-tree-history-directory-alist '((".*" . "/home/hamza/.emacs.d/undo")))
+    :config
+    (global-undo-tree-mode))
+
+  (use-package ligature
+    :ensure t
+    :config
+    ;; Enable the "www" ligature in every possible major mode
+    (ligature-set-ligatures 't '("www"))
+    ;; Enable traditional ligature support in eww-mode, if the
+    ;; `variable-pitch' face supports it
+    (ligature-set-ligatures 'eww-mode '("ff" "fi" "ffi"))
+    ;; Enable all Cascadia Code ligatures in programming modes
+    (ligature-set-ligatures 'prog-mode '("-<<" "-<" "-<-" "<--" "<---" "<<-" "<-" "->" "->>" "-->" "--->" "->-" ">-" ">>-"
+    				       "=<<" "=<" "=<=" "<==" "<===" "<<=" "<=" "=>" "=>>" "==>" "===>" "=>=" ">=" ">>="
+    				       "<->" "<-->" "<--->" "<---->" "<=>" "<==>" "<===>" "<====>" "::" ":::" "__"
+    				       "<~~" "</" "</>" "/>" "~~>" "==" "!=" "/=" "~=" "<>" "===" "!==" "!===" "=/=" "=!="
+    				       "<:" ":=" "*=" "*+" "<*" "<*>" "*>" "<|" "<|>" "|>" "<." "<.>" ".>" "+*" "=*" "=:" ":>"
+    				       "(*" "*)" "/*" "*/" "[|" "|]" "{|" "|}" "++" "+++" "\\/" "/\\" "|-" "-|" "<!--" "<!---"))
+    ;; Enables ligature checks globally in all buffers.  You can also do it
+    ;; per mode with `ligature-mode'.
+    (global-ligature-mode))
+
+  (use-package all-the-icons
+    :if (display-graphic-p)
+    :ensure t)
+
+  (use-package kind-icon
+    :ensure t
+    :after corfu
+    :config
+    (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+
+  (use-package all-the-icons-dired
+    :ensure t
+    :config
+    (add-hook 'dired-mode-hook #'all-the-icons-dired-mode))
+
+  (elpaca-process-queues)
+
+  (use-package yasnippet
+    :ensure t)
+
+  (use-package yasnippet-snippets
+    :ensure t
+    :config
+    (setq yas-snippet-dirs
+    	`("/home/hamza/.emacs.d/snippets" ;; Personal Snippets
+    	  ,yasnippet-snippets-dir))
+    (yas-global-mode 1))
+
+  (use-package magit
+    :ensure t)
+#+end_src
+
+* Programming
+#+begin_src emacs-lisp
+  (setq js-indent-level 4)
+
+  (use-package typescript-mode
+    :defer t
+    :ensure t
+    :config
+    (setq typescript-indent-level 4))
+
+  (use-package tide
+    :defer t
+    :ensure t
+    :config
+    (setq typescript-indent-level 4))
+
+  (use-package svelte-mode
+    :defer t
+    :ensure t)
+
+  (use-package rainbow-delimiters
+    :ensure t
+    :config
+    (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
+
+  (use-package pyvenv
+    :defer t
+    :ensure t)
+
+  (use-package lsp-dart
+    :defer t
+    :ensure t)
+
+  (use-package flutter
+    :defer t
+    :ensure t)
+#+end_src
+
+* Language Learning
+** Japanese
+#+begin_src emacs-lisp
+  (use-package kanji-mode
+    :ensure t)
+
+  (use-package anki-editor
+    :ensure t)
+
+  (use-package clipmon
+    :ensure t
+    :config
+    (setq clipmon-interval 0.1))
+#+end_src
+
+* Custom
+#+begin_src emacs-lisp
+  (setq-default indent-tabs-mode nil)
+  (setq-default tab-width 4)
+  (setq c-set-style "k&r")
+  (setq c-basic-offset 4)
+
+  (defun hamza/org-draw-mnemonic (basename &optional ask-drawing-program?)
+    (interactive "sFile basename (important word(s)): ")
+    (let ((mnemonic-filename (format "mmm-mnemonic-%s-%s.png" basename (org-id-uuid))))
+      (call-process-shell-command (concat "magick -size 1920x1080 xc:transparent PNG32:"
+                                          mnemonic-filename)
+                                  nil 0)
+      (insert "#+attr_org: :width 500px")
+      (org-newline-and-indent)
+      (org-insert-link t (format "file:%s" mnemonic-filename))
+      (call-process-shell-command (if ask-drawing-program?
+                                      (read-from-minibuffer "Drawing program/command: ")
+                                    (concat "krita " mnemonic-filename))
+                                  nil 0)
+      (org-redisplay-inline-images)))
+
+  (defun hamza/org-jp-memory-palace (word-kanji pitch-index meanings &optional ask-drawing-program? ask-yomitan-link? ask-browser?)
+    "Inserts a memory palace entry for japanese vocabulary. Requires the KANJI-MODE and ORG-DOWNLOAD package. Copy an image (of a word entry in a dictionary) to your clipboard and enter the japanese word in kanji (this requires a way to enter the word in japanese like an IME) as the WORD-KANJI argument to use this function."
+    (interactive "sWord in kanji: \nnPitch accent index (-1 = Before, 0 = Heiban, 1 = Atamadaka, ...): \nsMeaning(s): ")
+    (kanji-mode 1)
+    (let* ((word-hiragana (km:kanji->hiragana word-kanji))
+           (word-romaji (km:all->romaji word-kanji))
+           (pitch-uncountable-kana [#x3083 #x3085 #x3087]) ; small ya, yu, yo
+           (word-with-pitch
+            (progn (dotimes (i (1+ pitch-index)) ;; Compensation for small kana being counted
+                     (when (seq-contains pitch-uncountable-kana (elt word-hiragana i))
+                       (cl-incf pitch-index)))
+                   (setf word-with-pitch
+                         (cond ((= pitch-index -1) (format "\\%s" word-hiragana)) ; previous word
+                               ((= pitch-index  0) word-hiragana)                 ; heiban
+                               (t (format "%s\\%s" (substring word-hiragana 0 pitch-index) ; normal
+                                          (substring word-hiragana pitch-index))))))))
+      (insert (format "%s (%s) - %s\n" word-kanji word-with-pitch meanings))
+      (let ((browser nil))
+        (call-process-shell-command (concat
+                                     (setf browser (if ask-browser?
+                                                       (read-from-minibuffer "Browser command program name: ")
+                                                     "chromium"))
+                                     " \""
+                                     (if ask-yomitan-link?
+                                         (read-from-minibuffer "Yomitan opening command (chromium \'chrome-extension://...\'): ")
+                                       (format "chrome-extension://likgccmbimhjbgkjambclfkhldnlhbnn/search.html?query=%s" word-kanji))
+                                     "\"") nil 0)
+        (kill-new word-kanji)
+        (sleep-for 0.2)               ; Kinda makes me sad ngl :-(
+        (when (and (string= (getenv "XDG_BACKEND") "wayland")
+                   (= (shell-command "printenv HYPRLAND_INSTANCE_SIGNATURE") 0)
+                   (string= browser "chromium"))
+          (shell-command "hyprctl dispatch focuswindow '^(Chromium)'")
+          (sleep-for 0.2))               ; Makes me sadder tbh :--((
+        (when (y-or-n-p "Has yomitan loaded? (do you want to take a screenshot?)")
+          (message "Take a screenshot of a dictionary entry for %s" word-kanji)
+          (setf org-download-screenshot-basename (format "mmm-scrot-%s-%s" word-romaji (org-id-uuid)))
+          (org-download-screenshot)
+          (setf org-download-screenshot-basename (get 'org-download-screenshot-basename 'saved-value)))
+        (when (y-or-n-p "Do you want to draw a mnemonic?")
+          (message "Draw your mnemonic for %s" word-kanji)
+          (hamza/org-draw-mnemonic (km:all->romaji word-kanji) ask-drawing-program?)))))
+
+  (defun hamza/org-open-image (edit-command)
+    (interactive "sEdit Command w/o filename (default: \"krita\"): ")
+    (let* ((filename (org-element-property :path (org-element-context)))
+           (edit-command (format "%s %s" (if (string-blank-p edit-command) "krita" edit-command) filename)))
+      (call-process-shell-command edit-command nil 0)))
+
+  ;;; ONLY M-SPC keybindings are here...
+  (setq cycle-spacing-actions '(delete-all-space restore))
+  (global-set-key (kbd "M-<return>") #'cycle-spacing)
+  (global-unset-key (kbd "M-SPC"))
+  (global-set-key (kbd "M-SPC a") #'org-agenda-list)
+  (global-set-key (kbd "M-SPC f t") (lambda () (interactive) (find-file "~/shr/org/todo.org")))
+  (global-set-key (kbd "M-SPC f c e") (lambda () (interactive) (find-file "~/.emacs.d/init.org")))
+  (global-set-key (kbd "M-SPC f c h") (lambda () (interactive) (find-file "~/.config/hypr/hyprland.conf")))
+  (global-set-key (kbd "M-SPC f m") (lambda () (interactive) (find-file "~/shr/org/memory-palaces.org")))
+  (global-set-key (kbd "M-SPC M-e") (lambda () (interactive) (find-file "~/.emacs.d/init.org")))
+  (global-set-key (kbd "M-SPC o j") #'hamza/org-jp-memory-palace)
+  (global-set-key (kbd "M-SPC o i") #'hamza/org-open-image)
+  (global-set-key (kbd "M-SPC o m") #'hamza/org-draw-mnemonic)
+  (global-set-key (kbd "M-SPC o c") (lambda () (interactive) (anki-editor-set-note-type nil "Cloze")))
+  (global-set-key (kbd "M-SPC o b") (lambda () (interactive) (anki-editor-set-note-type nil "Basic")))
+  (which-key-add-key-based-replacements
+    "M-SPC M-e" "Emacs Config"
+    "M-SPC a" "Agenda"
+    "M-SPC f" "Files"
+    "M-SPC f t" "Todo"
+    "M-SPC f c" "Configs"
+    "M-SPC f c e" "Emacs Config"
+    "M-SPC f c h" "Hyprland Config"
+    "M-SPC f m" "Memory Palaces"
+    "M-SPC o" "Org Mode"
+    "M-SPC o j" "JP Memory Palace"
+    "M-SPC o i" "Open/Edit Image"
+    "M-SPC o m" "Draw MMM Mnemonic"
+    "M-SPC o c" "Anki Cloze Card"
+    "M-SPC o b" "Anki Basic Card")
+
+  ;; ;; Org mode
+  ;; (define-skeleton hamza/src-block
+  ;;   "Insert src block in org mode"
+  ;;   "Language: "
+  ;;   "#+begin_src " str
+  ;;   > _
+  ;;   "\n#+end_src")
+
+  ;; ;; C/C++
+  ;; (define-skeleton hamza/skel-c-main
+  ;;   "Insert a typical main function."
+  ;;   nil
+  ;;   "int main(int argc, char** argv) {\n"
+  ;;   > _
+  ;;   "\n}"
+  ;;   )
+
+  ;; (define-skeleton hamza/skel-c-comment
+  ;;   "Insert comment."
+  ;;   nil
+  ;;   "/* "
+  ;;   > _
+  ;;   " */"
+  ;;   )
+
+  ;; (define-skeleton hamza/skel-c-printf
+  ;;   "Insert the common printf statement at point."
+  ;;   nil
+  ;;   > "printf(\""
+  ;;   _
+  ;;   "\");"
+  ;;   )
+
+  ;; (define-skeleton hamza/skel-c-printf-flush
+  ;;   "Insert the common printf statement followed by an fflush at point."
+  ;;   nil
+  ;;   > "printf(\""
+  ;;   _
+  ;;   "\");fflush(stdout);"
+  ;;   )
+
+  ;; (define-skeleton hamza/skel-c-printf-newline
+  ;;   "Insert a printf statement with newline"
+  ;;   nil
+  ;;   "printf(\"\\n\");"
+  ;; )
+
+  ;; (define-skeleton hamza/skel-c-loop-for
+  ;;   "Insert a for-loop with an int counter variable."
+  ;;   "Counter variable(int): "
+  ;;   >"for(" str "=0;" str "<" _ ";" str "++) {" \n
+  ;;   \n
+  ;;   > "}" \n
+  ;;   )
+
+  ;; (define-skeleton hamza/skel-c-loop-while
+  ;;   "Insert a while-loop template."
+  ;;   > "while(" _ ") {"\n
+  ;;   \n
+  ;;   >"}" \n
+  ;;   )
+
+  ;; (define-skeleton hamza/skel-c-fflush
+  ;;   "Insert a fflush of stdout."
+  ;;   nil
+  ;;   > "fflush(stdout);"
+  ;;   )
+
+  ;; (define-skeleton hamza/skel-c-fprintf
+  ;;   "Insert a fprintf statement at point asking for the stream."
+  ;;   "STREAM: "
+  ;;   > "fprintf(" str ",\""
+  ;;   _
+  ;;   "\\n\");"
+  ;;   )
+
+  ;; (define-skeleton hamza/skel-c-include
+  ;;   "Insert a precompiler include statement, asking for what to include.
+  ;; You need to give the quotation marks or the angles yourself."
+  ;;   "include what? "
+  ;;   > "# include " str
+  ;;   )
+
+  ;; (define-skeleton hamza/skel-cc-loop-for
+  ;;   "Insert a for-loop with an int counter variable."
+  ;;   >"for(int " (setq v1 (skeleton-read "Var: ")) | "i" " = 0; "
+  ;;   v1 | "i" " < " @ - "; ++" v1 | "i" ") {" \n
+  ;;   > @ _
+  ;;   "\n}")
+
+  ;; (define-skeleton hamza/skel-cc-cout
+  ;;   "Insert a cout statement at point"
+  ;;   nil
+  ;;   > "std::cout << " _ " << \"\\n\"")
+
+  ;; (defvar *skeleton-markers* nil
+  ;;   "Markers for locations saved in skeleton-positions")
+
+  ;; (add-hook 'skeleton-end-hook 'skeleton-make-markers)
+
+  ;; (defun skeleton-make-markers ()
+  ;;   (while *skeleton-markers*
+  ;;     (set-marker (pop *skeleton-markers*) nil))
+  ;;   (setq *skeleton-markers*
+  ;; 	(mapcar 'copy-marker (reverse skeleton-positions))))
+
+  ;; (defun skeleton-next-position (&optional reverse)
+  ;;   "Jump to next position in skeleton.
+  ;;          REVERSE - Jump to previous position in skeleton"
+  ;;   (interactive "P")
+  ;;   (let* ((positions (mapcar 'marker-position *skeleton-markers*))
+  ;; 		 (positions (if reverse (reverse positions) positions))
+  ;; 		 (comp (if reverse '> '<))
+  ;; 		 pos)
+  ;;     (when positions
+  ;;       (if (catch 'break
+  ;; 			(while (setq pos (pop positions))
+  ;; 			  (when (funcall comp (point) pos)
+  ;; 				(throw 'break t))))
+  ;; 		  (goto-char pos)
+  ;; 		(goto-char (marker-position
+  ;; 					(car *skeleton-markers*)))))))
+
+  ;; (global-unset-key (kbd "M-<tab>"))
+  ;; (global-set-key (kbd "M-<tab>") #'skeleton-next-position)
+
+  ;; (define-abbrev-table 'org-mode-abbrev-table
+  ;;   '(("src" "" hamza/src-block)))
+
+  ;; (define-abbrev-table 'c-mode-abbrev-table
+  ;;   '(("main" "" hamza/skel-c-main)
+  ;; 	("pf" ""  hamza/skel-c-printf)
+  ;; 	("pff" ""  hamza/skel-c-printf-flush)
+  ;; 	("pfn" ""  hamza/skel-c-printf-newline)
+  ;; 	("for" ""  hamza/skel-c-loop-for)
+  ;; 	("while" ""  hamza/skel-c-loop-while)
+  ;; 	("fflush" ""  hamza/skel-c-fflush)
+  ;; 	("fprintf" ""  hamza/skel-c-fprintf)
+  ;; 	("inc" ""  hamza/skel-c-include)
+  ;; 	("comment" ""  hamza/skel-c-comment)))
+
+  ;; (define-abbrev-table 'c++-mode-abbrev-table
+  ;;   '(("for" ""  hamza/skel-cc-loop-for)
+  ;; 	("cout" ""  hamza/skel-cc-cout)))
+#+end_src

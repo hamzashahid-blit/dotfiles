@@ -1,0 +1,40 @@
+{
+    "modules-left": ["hyprland/workspaces", "hyprland/mode"],
+    "modules-center": ["clock"],
+    "modules-right": ["tray", "custom/scratchpad-indicator", "pulseaudio", "custom/power"],
+
+	"hyprland/mode": {
+        "format": "<span style=\"italic\">{}</span>"
+    },
+    "network": {
+        "format-wifi": "{essid} ({signalStrength}%) ",
+        "format-ethernet": "{ifname} ",
+        "format-disconnected": "", 
+        "max-length": 50,
+        "on-click": "foot nmtui"
+    },
+    "tray": {
+        "icon-size": 15,
+        "spacing": 10
+    },
+    "clock": {
+        //"format-alt": "{:%Y-%m-%d}"
+		//"tooltip-format": "<big>{:%Y %B \t week: %V }</big>\n<tt>{calendar}</tt>",
+		"on-click": "foot peaclock"
+    },
+	"wireplumber": {
+	    "format": "{volume}% {icon}",
+        "format-muted": "",
+        "on-click": "easyeffects",
+        "format-icons": ["", "", ""]
+	},
+    "custom/scratchpad-indicator": {
+        "format-text": "{}hi",
+        "return-type": "json",
+        "interval": 3,
+        "exec": "~/.local/bin/scratchpad-indicator 2> /dev/null",
+        "exec-if": "exit 0",
+        "on-click": "swaymsg 'scratchpad show'",
+        "on-click-right": "swaymsg 'move scratchpad'"
+    }
+}

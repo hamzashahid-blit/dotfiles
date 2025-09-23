@@ -1,0 +1,12 @@
+width = 100%
+height = 100%
+border-width = 0
+outline-width = 0
+padding-left = 20%
+padding-top = 20%
+result-spacing = 25
+num-results = 10
+font = Iosevka Custom
+background-color = #1d2021b2
+text-color = #ebdbb2
+selection-color = #b16286

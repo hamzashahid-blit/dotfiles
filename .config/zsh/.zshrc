@@ -48,7 +48,6 @@ export LESSHISTFILE="-" # delete it
 export XAUTHORITY="$XDG_RUNTIME_DIR/Xauthority"
 export WGETRC="$HOME/.config/wget/wgetrc"
 export INPUTRC="$HOME/.config/inputrc"
-export ZDOTDIR="$HOME/.config/zsh"
 export GNUPGHOME="$XDG_DATA_HOME/gnupg"
 export WINEPREFIX="$XDG_DATA_HOME/wineprefixes/default"
 export KODI_DATA="$XDG_DATA_HOME/kodi"
@@ -64,6 +63,10 @@ export MPLAYER_HOME="$XDG_CONFIG_HOME/mplayer"
 export RENPY_PATH_TO_SAVES="$XDG_DATA_HOME/renpy"
 export RENPY_MULTIPERSISTENT="$XDG_DATA_HOME/renpy_shared"
 export EASYOCR_MODULE_PATH="$XDG_CONFIG_HOME/EasyOCR"
+
+# For Cargo. CARGO_HOME MUST BE SET BEFORE!!! (since
+# it is used in the below sourced file)
+source "$HOME/.local/share/cargo/env"
 
 ### PLUGINS ### START
 #source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh

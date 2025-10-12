@@ -17,11 +17,11 @@ export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 # For Flutter/Android/Dart
-export ANDROID=$HOME/src/Android
+export ANDROID=$HOME/Android
 export PATH=$ANDROID/cmdline-tools/latest:$PATH
 export PATH=$ANDROID/cmdline-tools/latest/bin:$PATH
 export PATH=$ANDROID/platform-tools:$PATH
-export ANDROID_SDK=$HOME/src/Android # Full caps like dat?
+export ANDROID_SDK=$HOME/Android # Full caps like dat?
 export PATH=$ANDROID_SDK:$PATH
 export PATH="$PATH":"$HOME/.pub-cache/bin"
 

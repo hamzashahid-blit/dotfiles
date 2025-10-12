@@ -1,0 +1,264 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+(progn ;;init forms
+  (ros:ensure-asdf)
+  (ql:quickload '(str dexador plump lquery zip) :silent t)) ;lparallel
+
+(defpackage :ros.script.stream-torrent.3877874701
+  (:use :cl))
+(in-package :ros.script.stream-torrent.3877874701)
+
+;; TODO: Error randomly occurs, "SSL: Output stream closed"
+;; DONE: Size also prints seeds
+
+
+;; TODO: Optimize (get-torrent-entries) used 2 times in main
+;; TODO: Multi-lingual subtitles?
+;; TODO: Installation script (function?)
+;; DONE: Recache domain when it doesn't work
+;; DONE: Check for no results
+;; STOP: History?
+;; TODO: Subtitles
+;; DONE: Table-ify
+;; TODO: Accept from Command Line
+;; TODO: Usage help
+;; DONE: ID for every torrent
+
+;; (torrents (mapcar (lambda (torrent)
+;;                     (setf (elt torrent 4)
+;;                       (str:substring 0 (- (length (elt torrent 4)) (length (elt torrent 1))) *tmp2*)))
+;;                   torrents))
+
+(defparameter *search-query* nil)
+(defparameter *domains* '("https://1337x.to"
+                          "https://1337x.tw"
+                          "https://1337x.is"
+                          "https://x1337x.ws"
+	                      "https://x1337x.eu"
+	                      "https://x1337x.se"
+	                      "https://1337x.st"
+	                      "https://1337x.unblocked.ic"
+	                      "https://1337x.gd"))
+(defparameter *cachedir* (uiop:native-namestring "~/.cache/stream-torrent/"))
+(defparameter *domain-cache-file* (merge-pathnames *cachedir* "domain.txt"))
+(defparameter *torrents* '())
+
+(defparameter *subtitles-file* (merge-pathnames *cachedir* "subtitles.srt"))
+(defparameter *subtitles-domain* "https://yifysubtitles.org")
+(defparameter *subtitles* '())
+
+;;; Domain Handling
+(defun domain-working? (domain)
+  (declare (optimize (speed 0) (safety 3)))
+  (handler-case (dex:get domain)
+    (error (c)
+      (declare (ignorable c))
+      (return-from domain-working? nil))))
+
+(defun find-domain ()
+  (declare (optimize (speed 0) (safety 3)))
+  (loop :for domain :in *domains*
+    :do (format t "Checking domain ~a...~%" domain)
+        (when (domain-working? domain)
+          (format t "Found working domain ~a~%" domain)
+          (return-from find-domain domain)))
+  (format t "No working domain found :( , exiting...~%")
+  (uiop:quit))
+
+(defun cache-domain ()
+  (declare (optimize (speed 0) (safety 3)))
+  (with-open-file (stream *domain-cache-file*
+                    :direction :output
+                    :if-exists :supersede
+                    :if-does-not-exist :create)
+    (write-string (find-domain) stream)))
+
+(defun get-domain ()
+  (declare (optimize (speed 0) (safety 3)))
+  (with-open-file (stream *domain-cache-file*
+                    :direction :input
+                    :if-does-not-exist nil)
+    (when stream
+      (let ((domain (read-line stream)))
+        (when (domain-working? domain)
+          (return-from get-domain domain))))
+    (cache-domain)))
+
+(defparameter *domain* (get-domain))
+
+;;; Torrent Processing
+(defun search-torrents ()
+  (declare (optimize (speed 0) (safety 3)))
+  (let* ((search-url (format nil "~a/search/~a/1/" *domain* *search-query*))
+         (doc (lquery:$ (initialize (dex:get search-url))))
+         ;; (torrents (lquery:$ doc
+         ;;             "tr"
+         ;;             (text)))
+         ;; (torrents (coerce torrents 'list))
+         ;; (torrents (mapcar (lambda (torrent) (cdr (str:lines torrent))) torrents))
+         ;; (torrents (cdr torrents))
+         ;; (torrents (mapcar (lambda (torrent) (subseq torrent 0 6)) torrents))
+         ;; (links (lquery:$ doc
+         ;;          ".coll-1>a:nth-child(2)"
+         ;;          (attr :href)))
+         ;; (links (coerce links 'list))
+         ;; (links (mapcar (lambda (link) (str:concat *domain* link)) links))
+         ;; (torrents (loop :for torrent :in torrents
+         ;;                 :for link :in links
+         ;;                 :for id :from 0
+         ;;                 :collect (append (list id) torrent (list link))))
+          )
+    (setf *torrents* nil)))
+
+(defun get-magnet-link (id)
+  (declare (optimize (speed 0) (safety 3)))
+  (let* ((search-url (car (last (elt *torrents* id))))
+         (doc (lquery:$ (initialize (dex:get search-url))))
+         (magnet (lquery:$ doc
+                   ".no-top-radius>.clearfix:first-child>ul:first-child>li:first-child>a"
+                   (attr :href))))
+    (elt magnet 0)))
+
+;;; Subtitle Processing
+(defun search-subtitles ()
+  (declare (optimize (speed 0) (safety 3)))
+  (let* ((search-url (format nil "~a/search?q=~a" *subtitles-domain* *search-query*))
+         (doc (lquery:$ (initialize (dex:get search-url))))
+         (names (coerce (lquery:$ doc
+                          ".media-heading"
+                          (text)) 'list))
+         (descriptions (coerce (lquery:$ doc
+                                 ".movie-desc"
+                                 (text)) 'list))
+         (subtitles-pages (coerce (lquery:$ doc
+                                  ".media-list a"
+                                  (attr :href)) 'list))
+         (subtitles-pages (mapcar (lambda (url) (str:concat *subtitles-domain* url)) subtitles-pages))
+         (subtitles (loop :for id :from 0
+                          :for name :in names
+                          :for description :in descriptions
+                          :for subtitle-page :in subtitles-pages
+                          :collect (list id name description subtitle-page))))
+    (setf *subtitles* subtitles)))
+
+(defun get-subtitles (id)
+  (declare (optimize (speed 0) (safety 3)))
+  (let* ((subtitles-page (car (last (elt *subtitles* id))))
+         (doc (lquery:$ (initialize (dex:get subtitles-page))))
+         (subtitles-urls (coerce (lquery:$ doc
+                                  "tr>td:nth-child(3)>a"
+                                  (attr :href)) 'list))
+         (subtitles-url (loop :for url :in subtitles-urls
+                             :when (str:contains? "english" url)
+                             :return (str:concat *subtitles-domain* url)))
+         (doc (lquery:$ (initialize (dex:get subtitles-url))))
+         (subtitles-url (elt (lquery:$ doc
+                               ".download-subtitle"
+                               (attr :href)) 0))
+         (subtitles-url (str:concat *subtitles-domain* subtitles-url))
+         (subtitles-zip-path (merge-pathnames *cachedir* #p"subtitles.zip"))
+         (subtitles-zip (progn (alexandria:write-byte-vector-into-file
+                                 (dex:get subtitles-url) subtitles-zip-path :if-exists :supersede)
+                               (zip:zipfile-entries (zip:open-zipfile subtitles-zip-path)))))
+    (maphash (lambda (filename entry)
+               (when (str:ends-with? ".srt" filename)
+                 (alexandria:write-byte-vector-into-file (zip:zipfile-entry-contents entry)
+                   *subtitles-file* :if-exists :supersede :if-does-not-exist :create)))
+      subtitles-zip)))
+
+;;; UI
+(defun get-torrent-entries ()
+  (declare (optimize (speed 0) (safety 3)))
+  "Converts torrents to a string that Rofi can read."
+  (let* ((torrents (mapcar #'butlast *torrents*))
+         (torrents (mapcar #'cdr torrents))
+         (names (mapcar (lambda (torrent)
+                             (str:prune 30 (first torrent) :ellipsis "…")) torrents))
+         (torrents (loop :for torrent :in torrents
+                         :for name :in names
+                         :collect (append (list name) (cdr torrent)))))
+    (str:unlines
+      (mapcar (lambda (line)
+                (destructuring-bind (name seeders leachers date size author) line
+                  (format nil "~30A   ~4A   ~4A   ~13A   ~12A   ~A"
+                    name seeders leachers date (str:substring 0 (- (length size) (length seeders)) size) author)))
+        torrents))))
+
+(defun ui/search-torrent ()
+  (declare (optimize (speed 0) (safety 3)))
+  "Get user's torrent search query."
+  (setf *search-query*
+        (str:trim (ignore-errors (uiop:run-program "rofi -dmenu -p 'Search torrents'" :output :string)))))
+
+(defun ui/select-torrent ()
+  (declare (optimize (speed 0) (safety 3)))
+  (let* ((entries (get-torrent-entries))
+         (entry (str:trim (ignore-errors (uiop:run-program "rofi -dmenu -p 'Select torrent'"
+                                           :input (make-string-input-stream entries) :output :string)))))
+    (loop :for torrent :in (str:lines entries)
+          :for id :from 0
+          :do (when (string= entry torrent)
+                (return-from ui/select-torrent id)))))
+
+;; TODO: FIX OUTPUT
+(defun get-subtitle-entries ()
+  (declare (optimize (speed 0) (safety 3)))
+  (let* ((subtitles (mapcar (lambda (sub) (butlast (cdr sub))) *subtitles*)))
+    (str:unlines
+      (mapcar (lambda (line)
+                (destructuring-bind (name description) line
+                  (format nil "~30A   ~A" name description)))
+        subtitles))))
+
+(defun ui/subtitles? ()
+  (declare (optimize (speed 0) (safety 3)))
+  (nth-value 2
+    (ignore-errors (uiop:run-program "zenity --question --title='Stream Torrent' --text='Do you want to download subtitles?'"))))
+
+(defun ui/select-subtitles ()
+  (declare (optimize (speed 0) (safety 3)))
+  (let* ((entries (get-subtitle-entries))
+         (entry (str:trim (ignore-errors (uiop:run-program "rofi -dmenu -p 'Select subtitles'")
+                                           :input (make-string-input-stream entries)))))
+    (loop :for subtitles :in (str:lines entries)
+          :for id :from 0
+          :do (when (string= entry subtitles)
+                (return-from ui/select-subtitles id)))))
+
+(defun launch-movie (magnet-link subtitles?)
+  (declare (optimize (speed 0) (safety 3)))
+  "Takes a magnet link and launches a movie using peerflix."
+  (uiop:launch-program "rofi -e 'Kindly wait, your torrent will startup in a few seconds...'")
+  (if subtitles?
+    (uiop:launch-program (format nil "peerflix '~a' -t ~a -k --fs" magnet-link *subtitles-file*))
+    (uiop:launch-program (format nil "peerflix '~a' -k --fs" magnet-link))))
+
+;;; Main
+(defun main (&rest argv)
+  (declare (optimize (speed 0) (safety 3)))
+  (declare (ignorable argv))
+  (setf *torrents* nil)
+  ;; Check for no search results and keep asking until otherwise.
+  ;; Try loop :for torrent = (get-torrent-entries) or smth
+  (loop :while (str:empty? (get-torrent-entries))
+        :do (ui/search-torrent)
+            (search-torrents)
+            (when (str:empty? (get-torrent-entries))
+              (uiop:run-program "rofi -e 'No Search Results.'")))
+  (get-torrent-entries)
+  (ui/search-torrent)
+  ;; (dex:get (format nil "~a/search/~a/1/" "https://1337x.to" "hello"))
+  (search-torrents)
+  (let ((magnet (get-magnet-link (ui/select-torrent))))
+    (if (ui/subtitles?)
+      (progn
+        (search-subtitles)
+        (get-subtitles (ui/select-subtitles))
+        (launch-movie magnet t))
+      (launch-movie magnet nil)))
+  )
+
+;;; vim: set ft=lisp lisp:

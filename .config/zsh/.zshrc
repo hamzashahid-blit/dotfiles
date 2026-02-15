@@ -13,8 +13,9 @@ PATH=$PATH:~/.local/bin;
 export DOTNET_ROOT=$HOME/src/dotnet
 export PATH=$PATH:$DOTNET_ROOT/tools
 export PATH=$PATH:$DOTNET_ROOT
-export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 
+export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=0 # for Osu!
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
+# PATH=$PATH:~/src/omnisharp-server/OmniSharp/bin/Debug
 
 # For Flutter/Android/Dart
 export ANDROID=$HOME/Android
@@ -25,7 +26,9 @@ export ANDROID_SDK=$HOME/Android # Full caps like dat?
 export PATH=$ANDROID_SDK:$PATH
 export PATH="$PATH":"$HOME/.pub-cache/bin"
 
-# PATH=$PATH:~/src/omnisharp-server/OmniSharp/bin/Debug
+# For Nix
+export PATH="$HOME/.nix-profile/bin:$PATH"
+export XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS" 
 
 # Lines configured by zsh-newuser-install
 HISTFILE=$HOME/.config/.histfile
@@ -63,6 +66,8 @@ export MPLAYER_HOME="$XDG_CONFIG_HOME/mplayer"
 export RENPY_PATH_TO_SAVES="$XDG_DATA_HOME/renpy"
 export RENPY_MULTIPERSISTENT="$XDG_DATA_HOME/renpy_shared"
 export EASYOCR_MODULE_PATH="$XDG_CONFIG_HOME/EasyOCR"
+export BUN_INSTALL="$XDG_DATA_HOME/bun" 
+export PATH="$BUN_INSTALL/bin:$PATH" 
 
 # For Cargo. CARGO_HOME MUST BE SET BEFORE!!! (since
 # it is used in the below sourced file)
@@ -285,6 +290,8 @@ alias y4="mpv --ytdl-raw-options=format-sort='res:480'";
 alias cachefd="fd -HI -tf . '/' > /dev/null"; # Cache for quick file searching
 alias mypipes="cpipes -p30 -c 'cc241d' -c '98971a' -c 'd79921' -c '458588' -c 'b16286' -c '689d6a' -c 'd65d0e'"
 alias gitdf='git --git-dir=$DOTFILES --work-tree=$HOME'
+alias hdb='cd /home/hamza/dev/sauda/backend' # Hamza Dev Backend (for current project)
+alias hdf='cd /home/hamza/dev/sauda/frontend' # Hamza Dev Frontend (for current project)
 ### ALIASES ### END
 
 eval `ssh-agent` > /dev/null
@@ -334,3 +341,8 @@ case ":$PATH:" in
 esac
 # pnpm end
 
+
+# bun completions
+[ -s "/home/hamza/.bun/_bun" ] && source "/home/hamza/.bun/_bun"
+
+. "$HOME/.local/share/../bin/env"

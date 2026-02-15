@@ -6,3 +6,5 @@
 
 # Created by `pipx` on 2024-01-24 03:33:15
 export PATH="$PATH:/home/hamza/.local/bin"
+
+. "$HOME/.local/share/../bin/env"

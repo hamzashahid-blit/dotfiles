@@ -16,19 +16,19 @@
 
 # set the x y block size, the width and height of an individual block composing
 # the clock
-block 2 1
+block 0 0
 # block-x 2
 # block-y 1
 
 # set the x y padding size, the width and height of the space between each
 # individual block composing the clock
-padding 2 1
+padding 0 0
 # padding-x 0
 # padding-y 0
 
 # set the x y margin size, the space around the outside of the clock from the
 # edge of the terminal
-margin 2 1
+margin 0 0
 # margin-x 0
 # margin-y 0
 
@@ -109,7 +109,7 @@ set hour-24 off
 set seconds on
 
 # display the date
-set date on
+set date off
 
 # auto size the clock to fill the screen, overrides the current x y block size
 set auto-size on

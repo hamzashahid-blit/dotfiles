@@ -1,0 +1,168 @@
+awesome: &awesome Font Awesome 6 Free:style=solid:pixelsize=14
+iosevka: &iosevka Iosevka Custom:pixelsize=14
+noto-jp: &noto-jp Noto Sans CJK JP:weight=100:pixelsize=14
+
+bar:
+   font: *iosevka
+   location: top
+   height: 26
+   foreground: ebdbb2ff
+   background: 282828b2
+   margin: 5
+
+   border:
+     color: 504945ff
+     bottom-width: 0
+
+   left:
+     - niri-workspaces:
+         font: *noto-jp
+         anchors:
+           ws_focused: &ws_focused d79921ff
+           ws_active: &ws_active edbbb2ff
+           ws_empty: &ws_empty 7c6f64ff
+           ws_other: &ws_other bbbbbbff
+           ws_xyz: &ws_xyz "⁜  "
+           ws_1: &ws_1 "一  "
+           ws_2: &ws_2 "二  "
+           ws_3: &ws_3 "三  "
+           ws_4: &ws_4 "四  "
+           ws_5: &ws_5 "五  "
+           ws_6: &ws_6 "六  "
+           ws_7: &ws_7 "七  "
+           ws_8: &ws_8 "八  "
+           ws_9: &ws_9 "九  "
+         content:
+           map:
+             default:
+                 map:
+                   default: {string: {text: *ws_xyz, foreground: *ws_empty}}
+                   conditions:
+                     active: {string: {text: *ws_xyz, foreground: *ws_active}}
+                     ~empty: {string: {text: *ws_xyz, foreground: *ws_other}}
+             conditions:
+               id == 1:
+                 map:
+                   default: {string: {text: *ws_1, foreground: *ws_empty}}
+                   conditions:
+                     active: {string: {text: *ws_1, foreground: *ws_active}}
+                     ~empty: {string: {text: *ws_1, foreground: *ws_other}}
+               id == 2:
+                 map:
+                   default: {string: {text: *ws_2, foreground: *ws_empty}}
+                   conditions:
+                     active: {string: {text: *ws_2, foreground: *ws_active}}
+                     ~empty: {string: {text: *ws_2, foreground: *ws_other}}
+               id == 3:
+                 map:
+                   default: {string: {text: *ws_3, foreground: *ws_empty}}
+                   conditions:
+                     active: {string: {text: *ws_3, foreground: *ws_active}}
+                     ~empty: {string: {text: *ws_3, foreground: *ws_other}}
+               id == 4:
+                 map:
+                   default: {string: {text: *ws_4, foreground: *ws_empty}}
+                   conditions:
+                     active: {string: {text: *ws_4, foreground: *ws_active}}
+                     ~empty: {string: {text: *ws_4, foreground: *ws_other}}
+               id == 5:
+                 map:
+                   default: {string: {text: *ws_5, foreground: *ws_empty}}
+                   conditions:
+                     active: {string: {text: *ws_5, foreground: *ws_active}}
+                     ~empty: {string: {text: *ws_5, foreground: *ws_other}}
+               id == 6:
+                 map:
+                   default: {string: {text: *ws_6, foreground: *ws_empty}}
+                   conditions:
+                     active: {string: {text: *ws_6, foreground: *ws_active}}
+                     ~empty: {string: {text: *ws_6, foreground: *ws_other}}
+               id == 7:
+                 map:
+                   default: {string: {text: *ws_7, foreground: *ws_empty}}
+                   conditions:
+                     active: {string: {text: *ws_7, foreground: *ws_active}}
+                     ~empty: {string: {text: *ws_7, foreground: *ws_other}}
+               id == 8:
+                 map:
+                   default: {string: {text: *ws_8, foreground: *ws_empty}}
+                   conditions:
+                     active: {string: {text: *ws_8, foreground: *ws_active}}
+                     ~empty: {string: {text: *ws_8, foreground: *ws_other}}
+               id == 9:
+                 map:
+                   default: {string: {text: *ws_9, foreground: *ws_empty}}
+                   conditions:
+                     active: {string: {text: *ws_9, foreground: *ws_active}}
+                     ~empty: {string: {text: *ws_9, foreground: *ws_other}}
+   right:
+     - mem:
+         content:
+           - string:
+               text: ""
+               font: *awesome
+               foreground: b16286ff
+               right-margin: 6
+           - string:
+               text: "{percent_used}% ({used:mb}MB)"
+               foreground: b16286ff
+           - string: { text: " | " }
+     - cpu:
+         content:
+           map:
+             conditions:
+               id < 0:
+                 - string:
+                     text: ""
+                     font: *awesome
+                     foreground: 83a598ff
+                     right-margin: 6
+                 - string:
+                     foreground: 83a598ff
+                     text: "{cpu}%"
+                 - string: { text: " | " }
+     - network:
+         poll-interval: 500
+         content:
+           map:
+             conditions:
+                 name == wlp1s0f0u3:
+                   map:
+                     default:
+                       - string:
+                           text: "󰖪"
+                           font: *iosevka
+                       - string:
+                           text: " | "
+                     conditions:
+                       state == up:
+                         - string:
+                             text: "󰖩 "
+                             font: *iosevka
+                             foreground: b8bb26ff
+                         - string:
+                             text: "{dl-speed:mb:.1}d/{ul-speed:mb:.1}u"
+                             foreground: b8bb26ff
+                         - string:
+                             text: " | "
+     - clock:
+         date-format: "%b %d, %a (%Y)"
+         time-format: "%I:%M %p :%S"
+         content:
+           - string:
+               text: ""
+               font: *awesome
+               foreground: fe8019ff
+               right-margin: 6
+           - string:
+               text: "{date}"
+               foreground: fe8019ff
+           - string: { text: " | " }
+           - string:
+               text: ""
+               font: *awesome
+               foreground: fe8019ff
+               right-margin: 6
+           - string:
+               text: "{time}"
+               foreground: fe8019ff

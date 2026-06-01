@@ -179,11 +179,12 @@
   (use-package org
     :ensure t
     :config
+    (setf org-blank-before-new-entry '((heading . nil) (plain-list-item . nil)))
     (setq org-ellipsis "…"
-    	org-src-window-setup 'current-window
-    	org-startup-with-inline-images t
-    	org-startup-with-latex-preview nil
-    	org-image-actual-width nil
+    	    org-src-window-setup 'current-window
+    	    org-startup-with-inline-images t
+    	    org-startup-with-latex-preview nil
+    	    org-image-actual-width nil
           org-log-into-drawer t)
     (set-face-attribute 'org-ellipsis nil :inherit 'default :box nil)
     (add-hook 'org-mode-hook #'org-indent-mode)
@@ -508,6 +509,14 @@
   (use-package flutter
     :defer t
     :ensure t)
+
+  (use-package ess
+    :defer t
+    :ensure t)
+
+  (use-package kdl-mode
+    :defer t
+    :ensure t)
 #+end_src
 
 * Language Learning
@@ -595,6 +604,32 @@
     (let* ((filename (org-element-property :path (org-element-context)))
            (edit-command (format "%s %s" (if (string-blank-p edit-command) "krita" edit-command) filename)))
       (call-process-shell-command edit-command nil 0)))
+
+  (defun hamza/unki (task-name) ;difficulty
+    ;; "Creates custom spaced free recall revisions in ORG-MODE based on modern learning methods. the DIFFICULTY argument describes the difficulty of the content to free recall. It increases the number of repetitions in any given time frame."
+    ;; (interactive "sDifficulty (Easy: -1, Normal: 0, Hard: 1): ")
+    (interactive "sWhat is your task (also include a range of 'units' covered)? ")
+    (let* ((repetitions `(("." . ,(make-decoded-time))
+                          ("d" . ,(make-decoded-time :day 1))
+                          ("w" . ,(make-decoded-time :day 7))
+                          ("m" . ,(make-decoded-time :month 1))
+                          ("3m" . ,(make-decoded-time :month 3))
+                          ("y" . ,(make-decoded-time :year 1))))
+           (repetition-times (mapcar #'cdr repetitions)))
+      (org-insert-heading nil t 1)
+      ;; (org-insert-timestamp (current-time) nil nil nil (concat " " task-name))
+      (insert task-name)
+      (cl-loop for idx from 1
+               for (delta-label . delta-time) in repetitions
+               do (progn
+                    (org-insert-heading nil t 2)
+                    (insert (format " [%s] %s" delta-label task-name))
+                    (org-schedule nil (encode-time
+                                       (seq-reduce
+                                        (lambda (total elem)
+                                          (decoded-time-add total elem))
+                                        (take idx repetition-times)
+                                        (decode-time))))))))
 
   ;;; ONLY M-SPC keybindings are here...
   (setq cycle-spacing-actions '(delete-all-space restore))

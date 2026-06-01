@@ -2,6 +2,7 @@
 PATH=$PATH:~/.local/bin;
 
 export PS1="%m:%~%# "
+export _JAVA_AWT_WM_NONREPARENTING=1 # for xwayland-satellite java apps
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]

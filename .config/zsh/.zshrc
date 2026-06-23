@@ -349,3 +349,6 @@ esac
 [ -s "/home/hamza/.bun/_bun" ] && source "/home/hamza/.bun/_bun"
 
 . "$HOME/.local/share/../bin/env"
+
+# Pi
+export PATH="$HOME/.local/bin:$PATH"

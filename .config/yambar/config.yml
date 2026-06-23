@@ -188,7 +188,7 @@ bar:
          content:
            map:
              conditions:
-                 name == wlp1s0f0u3:
+                 name == enp8s0:
                    map:
                      default: 
                        - string:
